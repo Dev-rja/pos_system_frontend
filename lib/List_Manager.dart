@@ -83,14 +83,10 @@ class InfoBoxStyle extends StatelessWidget {
 //==============================================================================
 // Categories List
 //==============================================================================
-final List<Map<String, String>> Dash_categories = [
-  {'name': 'Category 1', 'image': 'assets/veg_cat.png'},
-  {'name': 'Category 2', 'image': 'assets/fru_cat.png'},
-  {'name': 'Category 3', 'image': 'assets/App_Icon.png'},
-  {'name': 'Category 4', 'image': 'assets/App_Icon.png'},
-  {'name': 'Category 5', 'image': 'assets/App_Icon.png'},
-  {'name': 'Category 6', 'image': 'assets/App_Icon.png'},
-
+final List<Map<String, dynamic>> Dash_categories = [
+  {'id': 1, 'name': 'Vegetables', 'image': 'assets/veg_cat.png'},
+  {'id': 2, 'name': 'Fruits', 'image': 'assets/fru_cat.png'},
+  {'id': 3, 'name': 'Dairy', 'image': 'assets/App_Icon.png'},
 ];
 
 //==============================================================================
@@ -111,6 +107,7 @@ class DashboardCategoriesBuilder extends StatelessWidget {
           return CategoriesBoxStyle(
             name: Dash_categories[index]['name']!,
             imagePath: Dash_categories[index]['image']!,
+            id: Dash_categories[index]['id']!,
           );
         },
       ),
@@ -125,8 +122,9 @@ class DashboardCategoriesBuilder extends StatelessWidget {
 class CategoriesBoxStyle extends StatelessWidget {
   final String name;
   final String imagePath;
+  final int id;
 
-  CategoriesBoxStyle({required this.name, required this.imagePath});
+  CategoriesBoxStyle({required this.name, required this.imagePath, required this.id});
 
   @override
   Widget build(BuildContext context) {
@@ -283,47 +281,94 @@ class TopItemBoxStyle extends StatelessWidget {
 //==============================================================================
 // Pro_Product List
 //==============================================================================
-final List<Map<String, String>> Pro_product = [
-  {'name': 'Product 1', 'image': 'assets/veg_cat.png', 'price': '10.00', 'stock': '50', 'ID': '0'},
-  {'name': 'Product 2', 'image': 'assets/fru_cat.png', 'price': '20.00', 'stock': '50', 'ID': '1'},
-  {'name': 'Product 3', 'image': 'assets/App_Icon.png', 'price': '30.00', 'stock': '50', 'ID': '2'},
-  {'name': 'Product 4', 'image': 'assets/App_Icon.png', 'price': '40.00', 'stock': '50', 'ID': '3'},
-  {'name': 'Product 5', 'image': 'assets/App_Icon.png', 'price': '50.00', 'stock': '50', 'ID': '4'},
-  {'name': 'Product 6', 'image': 'assets/App_Icon.png', 'price': '60.00', 'stock': '50', 'ID': '5'},
-  {'name': 'Product 7', 'image': 'assets/App_Icon.png', 'price': '70.00', 'stock': '50', 'ID': '6'},
-  {'name': 'Product 8', 'image': 'assets/App_Icon.png', 'price': '80.00', 'stock': '50', 'ID': '7'},
-  {'name': 'Product 9', 'image': 'assets/App_Icon.png', 'price': '90.00', 'stock': '50', 'ID': '8'},
-  {'name': 'Product 10', 'image': 'assets/App_Icon.png', 'price': '100.00', 'stock': '50', 'ID': '9'},
-  {'name': 'Product 11', 'image': 'assets/App_Icon.png', 'price': '110.00', 'stock': '50', 'ID': '10'},
-  {'name': 'Product 12', 'image': 'assets/App_Icon.png', 'price': '120.00', 'stock': '50', 'ID': '11'},
-  {'name': 'Product 13', 'image': 'assets/App_Icon.png', 'price': '130.00', 'stock': '50', 'ID': '12'},
+final List<Map<String, dynamic>> Pro_product = [
 
-
-
+  {
+    'name': 'Product 1',
+    'image': 'assets/veg_cat.png',
+    'categories': [1, 2],
+    'price': 10,
+    'stock': 50,
+    'ID': 0
+  },
+  {
+    'name': 'Product 2',
+    'image': 'assets/fru_cat.png',
+    'categories': [2, 1],
+    'price': 20,
+    'stock': 30,
+    'ID': 1
+  },
+  {
+    'name': 'Product 3',
+    'image': 'assets/App_Icon.png',
+    'categories': [3, 1],
+    'price': 30,
+    'stock': 20,
+    'ID': 2
+  },
+  {
+    'name': 'Product 4',
+    'image': 'assets/App_Icon.png',
+    'categories': [3, 1],
+    'price': 40,
+    'stock': 10,
+    'ID': 3
+  },
+  {
+    'name': 'Product 5',
+    'image': 'assets/App_Icon.png',
+    'categories': [2, 3],
+    'price': 50,
+    'stock': 5,
+    'ID': 4
+  },
 ];
+
 
 //==============================================================================
 // Pro_Product Builder
 //==============================================================================
 
 class ProProductBuilder extends StatelessWidget {
+  final Function(Map<String, dynamic>) onAddToOrder;
+  final int selectedCategoryId;
+
+  ProProductBuilder({
+    required this.onAddToOrder,
+    required this.selectedCategoryId,
+  });
+
   @override
   Widget build(BuildContext context) {
+    // Filter products using selectedCategoryId
+    final filteredProducts = selectedCategoryId == 0
+        ? Pro_product
+        : Pro_product
+        .where((product) =>
+        product['categories'].contains(selectedCategoryId))
+        .toList();
+
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: GridView.builder(
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3, // Number of columns
-          crossAxisSpacing: 10, // Spacing between columns
-          mainAxisSpacing: 10, // Spacing between rows
-          childAspectRatio: 1, // Width/Height ratio
+          crossAxisCount: 3,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: 1,
         ),
-        itemCount: Pro_product.length,
+        itemCount: filteredProducts.length,
         itemBuilder: (context, index) {
+          final product = filteredProducts[index];
           return ProProductBoxStyle(
-            name: Pro_product[index]['name']!,
-            imagePath: Pro_product[index]['image']!,
-            price: Pro_product[index]['price']!,
+            name: product['name'],
+            imagePath: product['image'],
+            price: product['price'],
+            stock: product['stock'],
+            onAdd: () {
+              onAddToOrder(product);
+            },
           );
         },
       ),
@@ -338,9 +383,17 @@ class ProProductBuilder extends StatelessWidget {
 class ProProductBoxStyle extends StatelessWidget {
   final String name;
   final String imagePath;
-  final String price;
+  final int price;
+  final int stock;
+  final VoidCallback onAdd; // Callback when "Add" is pressed
 
-  ProProductBoxStyle({required this.name, required this.imagePath, required this.price,});
+  ProProductBoxStyle({
+    required this.name,
+    required this.imagePath,
+    required this.price,
+    required this.stock,
+    required this.onAdd,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -352,7 +405,6 @@ class ProProductBoxStyle extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Image container
             Flexible(
               child: Container(
                 margin: EdgeInsets.only(top: 10, bottom: 10),
@@ -368,7 +420,6 @@ class ProProductBoxStyle extends StatelessWidget {
                 ),
               ),
             ),
-
             AutoSizeText(
               name,
               style: const TextStyle(
@@ -379,12 +430,21 @@ class ProProductBoxStyle extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-
+            AutoSizeText(
+              'Stock: $stock',
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
             AutoSizeText(
               NumberFormat.currency(
                 symbol: '₱',
                 decimalDigits: 2,
-              ).format(double.parse(price)),
+              ).format(double.parse(price.toString())),
               style: const TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 15,
@@ -394,6 +454,19 @@ class ProProductBoxStyle extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
 
+            Container(
+              margin: EdgeInsets.only(top: 5),
+              child: ElevatedButton(
+                onPressed: onAdd,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                ),
+                child: const Text(
+                  "Add",
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -401,27 +474,41 @@ class ProProductBoxStyle extends StatelessWidget {
   }
 }
 
+
 //==============================================================================
 // Pro_Categories Builder
 //==============================================================================
 
 class ProCategoriesBuilder extends StatelessWidget {
+  final int selectedCategoryId;
+  final Function(int) onCategorySelected;
+
+  const ProCategoriesBuilder({
+    super.key,
+    required this.selectedCategoryId,
+    required this.onCategorySelected,
+  });
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: GridView.builder(
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 5, // Number of columns
-          crossAxisSpacing: 10, // Spacing between columns
-          mainAxisSpacing: 10, // Spacing between rows
-          childAspectRatio: 1.5, // Width/Height ratio
+          crossAxisCount: 5,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: 1.5,
         ),
         itemCount: Dash_categories.length,
         itemBuilder: (context, index) {
+          final category = Dash_categories[index];
           return ProCategoriesBoxStyle(
-            name: Dash_categories[index]['name']!,
-            imagePath: Dash_categories[index]['image']!,
+            name: category['name'],
+            imagePath: category['image'],
+            id: category['id'],
+            isSelected: selectedCategoryId == category['id'],
+            onTap: () => onCategorySelected(category['id']),
           );
         },
       ),
@@ -436,27 +523,36 @@ class ProCategoriesBuilder extends StatelessWidget {
 class ProCategoriesBoxStyle extends StatelessWidget {
   final String name;
   final String imagePath;
+  final int id;
+  final bool isSelected;
+  final VoidCallback onTap;
 
-  ProCategoriesBoxStyle({required this.name, required this.imagePath});
+  const ProCategoriesBoxStyle({
+    super.key,
+    required this.name,
+    required this.imagePath,
+    required this.id,
+    required this.isSelected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.all(5),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.black, width: 0.1)
-        ),
-        padding: const EdgeInsets.all(1),
-        child: Stack(
-          children: [
-            // Image container
-            Flexible(
-              child: Container(
-                alignment: Alignment.bottomLeft,
-                height: 200,
-                width: 250,
+      color: isSelected ? Colors.greenAccent.withOpacity(.3) : Colors.white,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isSelected ? Colors.green : Colors.black,
+              width: isSelected ? 2 : 0.2,
+            ),
+          ),
+          child: Stack(
+            children: [
+              Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   image: DecorationImage(
@@ -465,35 +561,215 @@ class ProCategoriesBoxStyle extends StatelessWidget {
                   ),
                 ),
               ),
-            ),
-
-            Expanded(
-              child: SizedBox(
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
                 child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(5),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey,
-                        spreadRadius: 1,
-                        blurRadius: 3,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
+                  color: Colors.white,
                   child: AutoSizeText(
                     name,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                    ),
                     textAlign: TextAlign.center,
                     maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                   ),
                 ),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+//==============================================================================
+// History List
+// =============================================================================
+final List<Map<String, dynamic>> TransHistory = [];
+
+//==============================================================================
+// History Builder
+//==============================================================================
+
+class TransHistoryBuilder extends StatefulWidget {
+  @override
+  _TransHistoryBuilderState createState() => _TransHistoryBuilderState();
+}
+
+class _TransHistoryBuilderState extends State<TransHistoryBuilder> {
+  List<bool> isExpandedList = List.generate(TransHistory.length, (index) => false);
+
+  String _formatDate(String dateString) {
+    try {
+      DateTime date = DateTime.parse(dateString);
+      return DateFormat('MMM dd, yyyy').format(date);
+    } catch (e) {
+      return dateString;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      itemCount: TransHistory.length,
+      itemBuilder: (context, groupIndex) {
+        final group = TransHistory[groupIndex];
+        final items = group['items'] as List<Map<String, dynamic>>;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Card(
+              elevation: 5,
+              color: Colors.green[700],
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                title: Text(
+                  'Transaction ID: ${group['id']}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _formatDate(group['date']),
+                      style: const TextStyle(color: Colors.white70, fontSize: 14),
+                    ),
+                    Text(
+                      "Cashier: ${group['cashierName']}",
+                      style: const TextStyle(color: Colors.white70, fontSize: 14),
+                    ),
+                    Text(
+                      "Total: ₱${group['total']}",
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    )
+                  ],
+                ),
+                trailing: IconButton(
+                  onPressed: () {
+                    setState(() {
+                      isExpandedList[groupIndex] = !isExpandedList[groupIndex];
+                    });
+                  },
+                  icon: Icon(
+                    isExpandedList[groupIndex] ? Icons.expand_less : Icons.expand_more,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+              ),
+            ),
+            if (isExpandedList[groupIndex])
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.green[50],
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Column(
+                  children: items
+                      .map((item) => HistoryBoxStyle(
+                    cashierName: group['cashierName'],
+                    date: group['date'],
+                    total: group['total'],
+                    name: item['name'],
+                    price: item['price'],
+                    quantity: item['quantity'].toString(),
+                  ))
+                      .toList(),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+//==============================================================================
+// History Box Style
+//==============================================================================
+
+class HistoryBoxStyle extends StatelessWidget {
+  final String name;
+  final String price;
+  final String cashierName;
+  final String date;
+  final String total;
+  final String quantity;
+
+
+
+  const HistoryBoxStyle({
+    super.key,
+    required this.name,
+    required this.price,
+    required this.cashierName,
+    required this.date,
+    required this.total,
+    required this.quantity,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.symmetric(vertical: 5),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+        child: Row(
+          children: [
+            const SizedBox(width: 15),
+            Expanded(
+              child: Row(
+                children: [
+                  AutoSizeText(
+                      "$name",
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: Colors.green[900],
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    AutoSizeText(
+                      "    qty: $quantity",
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 10,
+                        color: Colors.grey[900],
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
+            ),
+
+            const SizedBox(width: 10),
+            AutoSizeText(
+              NumberFormat.currency(symbol: '₱', decimalDigits: 2)
+                  .format(double.tryParse(price) ?? 0),
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+                color: Colors.green[800],
+              ),
+              maxLines: 1,
             ),
           ],
         ),
