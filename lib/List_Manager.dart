@@ -501,3 +501,298 @@ class ProCategoriesBoxStyle extends StatelessWidget {
     );
   }
 }
+
+//==============================================================================
+// History List
+//==============================================================================
+final List<Map<String, dynamic>> TransHistory = [
+  {
+    'id': '001',
+    'date': '2024-01-15',
+    'items': [
+      {'name': 'Product 1', 'image': 'assets/veg_cat.png', 'price': '10.00'},
+      {'name': 'Product 2', 'image': 'assets/fru_cat.png', 'price': '20.00'},
+      {'name': 'Product 1', 'image': 'assets/veg_cat.png', 'price': '10.00'},
+      {'name': 'Product 2', 'image': 'assets/fru_cat.png', 'price': '20.00'},
+      {'name': 'Product 1', 'image': 'assets/veg_cat.png', 'price': '10.00'},
+      {'name': 'Product 2', 'image': 'assets/fru_cat.png', 'price': '20.00'},
+    ],
+  },
+  {
+    'id': '002',
+    'date': '2024-01-14',
+    'items': [
+      {'name': 'Product 3', 'image': 'assets/App_Icon.png', 'price': '30.00'},
+      {'name': 'Product 4', 'image': 'assets/App_Icon.png', 'price': '40.00'},
+    ],
+  },
+  {
+    'id': '003',
+    'date': '2024-01-13',
+    'items': [
+      {'name': 'Product 5', 'image': 'assets/App_Icon.png', 'price': '50.00'},
+    ]
+  },
+  {
+    'id': '004',
+    'date': '2024-01-13',
+    'items': [
+      {'name': 'Product 5', 'image': 'assets/App_Icon.png', 'price': '50.00'},
+    ]
+  },
+  {
+    'id': '005',
+    'date': '2024-01-13',
+    'items': [
+      {'name': 'Product 5', 'image': 'assets/App_Icon.png', 'price': '50.00'},
+    ]
+  },
+  {
+    'id': '006',
+    'date': '2024-01-13',
+    'items': [
+      {'name': 'Product 5', 'image': 'assets/App_Icon.png', 'price': '50.00'},
+    ]
+  },
+  {
+    'id': '007',
+    'date': '2024-01-13',
+    'items': [
+      {'name': 'Product 5', 'image': 'assets/App_Icon.png', 'price': '50.00'},
+    ]
+  },
+  {
+    'id': '008',
+    'date': '2024-01-13',
+    'items': [
+      {'name': 'Product 5', 'image': 'assets/App_Icon.png', 'price': '50.00'},
+    ]
+  },
+  {
+    'id': '009',
+    'date': '2024-01-13',
+    'items': [
+      {'name': 'Product 5', 'image': 'assets/App_Icon.png', 'price': '50.00'},
+    ]
+  },
+  {
+    'id': '010',
+    'date': '2024-01-13',
+    'items': [
+      {'name': 'Product 5', 'image': 'assets/App_Icon.png', 'price': '50.00'},
+    ]
+  },
+  {
+    'id': '011',
+    'date': '2024-01-13',
+    'items': [
+      {'name': 'Product 5', 'image': 'assets/App_Icon.png', 'price': '50.00'},
+    ]
+  },
+  {
+    'id': '012',
+    'date': '2024-01-13',
+    'items': [
+      {'name': 'Product 5', 'image': 'assets/App_Icon.png', 'price': '50.00'},
+    ]
+  },
+  {
+    'id': '013',
+    'date': '2024-01-13',
+    'items': [
+      {'name': 'Product 5', 'image': 'assets/App_Icon.png', 'price': '50.00'},
+    ]
+  },
+];
+
+//==============================================================================
+// History Builder
+//==============================================================================
+
+class TransHistoryBuilder extends StatefulWidget {
+  @override
+  _TransHistoryBuilderState createState() => _TransHistoryBuilderState();
+}
+
+class _TransHistoryBuilderState extends State<TransHistoryBuilder> {
+  List<bool> isExpandedList = List.generate(TransHistory.length, (index) => false);
+
+  String _formatDate(String dateString) {
+    try {
+      DateTime date = DateTime.parse(dateString);
+      return DateFormat('MMM dd, yyyy').format(date);
+    } catch (e) {
+      return dateString;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.only(left: 50, right: 50),
+      child: ListView.builder(
+        shrinkWrap: true,
+        itemCount: TransHistory.length,
+        itemBuilder: (context, groupIndex) {
+          final group = TransHistory[groupIndex];
+          final items = group['items'] as List<Map<String, dynamic>>;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Card(
+                elevation: 20,
+                color: Color.fromRGBO(0, 113, 80, 1),
+                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'ID: ${group['id']}',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              _formatDate(group['date']),
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            isExpandedList[groupIndex] = !isExpandedList[groupIndex];
+                          });
+                        },
+                        icon: Icon(
+                          isExpandedList[groupIndex]
+                              ? Icons.expand_less
+                              : Icons.expand_more,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                        tooltip: isExpandedList[groupIndex] ? 'Collapse' : 'Expand',
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              if (isExpandedList[groupIndex])
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: items.length,
+                  itemBuilder: (context, itemIndex) {
+                    return HistoryBoxStyle(
+                      name: items[itemIndex]['name'],
+                      imagePath: items[itemIndex]['image'],
+                      price: items[itemIndex]['price'],
+                    );
+                  },
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+//==============================================================================
+// History Box Style
+//==============================================================================
+
+class HistoryBoxStyle extends StatelessWidget {
+  final String name;
+  final String imagePath;
+  final String price;
+
+  HistoryBoxStyle({required this.name, required this.imagePath, required this.price});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: Colors.green,
+      ),
+      child: Card(
+        elevation: 0,
+        color: Colors.transparent,
+        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(0),
+        ),
+        child: Container(
+          color: Colors.transparent,
+          margin: EdgeInsets.all(20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Flexible(
+                child: Container(
+                  alignment: Alignment.center,
+                  height: 70,
+                  width: 70,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: Colors.black, width: 0.1),
+                    image: DecorationImage(
+                      image: AssetImage(imagePath),
+                      fit: BoxFit.fill,
+                    ),
+                  ),
+                ),
+              ),
+
+              Expanded(
+                child: AutoSizeText(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+
+              AutoSizeText(
+                NumberFormat.currency(
+                  symbol: '₱',
+                  decimalDigits: 2,
+                ).format(double.parse(price)),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

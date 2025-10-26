@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'Dashboard_Content_D.dart';
 import 'Process_Order_Content_D.dart';
 import 'Inventory_Content_D.dart';
+import 'Transaction_History_Content_D.dart';
 
 
 class D_Dashboad_Page extends StatefulWidget {
@@ -23,7 +24,7 @@ class _D_Dashboad_PageState extends State<D_Dashboad_Page> {
     DashboardContent(),
     ProcessOrderContentD(),
     InventoryContentD(),
-    const Center(child: Text('Reports Analytics Page')),
+    HistoryContentD(),
     const Center(child: Text('Transaction History Page')),
   ];
 
