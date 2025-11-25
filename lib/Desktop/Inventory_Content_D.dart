@@ -6,12 +6,39 @@ import 'package:intl/intl.dart';
 import 'package:data_table_2/data_table_2.dart';
 import '../models/product.dart';
 import '../services/product_service.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class InventoryContentD extends StatefulWidget {
   const InventoryContentD({super.key});
 
   @override
   State<InventoryContentD> createState() => _InventoryContentDState();
+}
+
+Future<bool> addProductToInventory({
+  required String name,
+  required String categoryId,
+  required double price,
+  required int stock,
+  required String unit,
+}) async {
+  var url = Uri.parse("http://127.0.0.1:5000/api/add_product");  // CHANGE FOR PHONE TESTING
+
+  var request = http.MultipartRequest('POST', url);
+  request.fields['product_name'] = name;
+  request.fields['category_id'] = categoryId;
+  request.fields['price'] = price.toString();
+  request.fields['stock_quantity'] = stock.toString();
+  request.fields['unit'] = unit;
+
+  try {
+    var response = await request.send();
+    return response.statusCode == 200;
+  } catch (e) {
+    print("ERROR: $e");
+    return false;
+  }
 }
 
 class _InventoryContentDState extends State<InventoryContentD> {
@@ -146,78 +173,101 @@ class _InventoryContentDState extends State<InventoryContentD> {
 
     showDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(builder: (ctx, setInner) {
-        return AlertDialog(
-          title: Text("Add Product"),
-          content: SizedBox(
-            width: 400,
-            height: 400,
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  TextField(controller: nameCtrl, decoration: InputDecoration(labelText: "Name")),
-                  TextField(controller: imageCtrl, decoration: InputDecoration(labelText: "Image Path")),
-                  TextField(controller: priceCtrl, decoration: InputDecoration(labelText: "Price")),
-                  TextField(controller: stockCtrl, decoration: InputDecoration(labelText: "Stock")),
-
-                  const SizedBox(height: 20),
-                  Text("Categories:", style: TextStyle(fontWeight: FontWeight.bold)),
-
-                  ...Dash_categories.map((e) {
-                    return CheckboxListTile(
-                      title: Text(e['name']),
-                      value: selectedCategories.contains(e['id']),
-                      onChanged: (v) {
-                        setInner(() {
-                          if (v == true) {
-                            selectedCategories.add(e['id']);
-                          } else {
-                            selectedCategories.remove(e['id']);
-                          }
-                        });
-                      },
-                    );
-                  }).toList(),
-                ],
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setInner) {
+          return AlertDialog(
+            title: const Text("Add Product"),
+            content: SizedBox(
+              width: 400,
+              height: 400,
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: nameCtrl,
+                      decoration: const InputDecoration(labelText: "Name"),
+                    ),
+                    TextField(
+                      controller: imageCtrl,
+                      decoration: const InputDecoration(labelText: "Image Path"),
+                    ),
+                    TextField(
+                      controller: priceCtrl,
+                      decoration: const InputDecoration(labelText: "Price"),
+                      keyboardType: TextInputType.number,
+                    ),
+                    TextField(
+                      controller: stockCtrl,
+                      decoration: const InputDecoration(labelText: "Stock"),
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      "Categories:",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    ...Dash_categories.map((e) {
+                      return CheckboxListTile(
+                        title: Text(e['name']),
+                        value: selectedCategories.contains(e['id']),
+                        onChanged: (v) {
+                          setInner(() {
+                            if (v == true) {
+                              selectedCategories.add(e['id']);
+                            } else {
+                              selectedCategories.remove(e['id']);
+                            }
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ],
+                ),
               ),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text("Cancel"),
-            ),
-            TextButton(
-              onPressed: () {
-                TextButton(
-                  onPressed: () {
-                    Pro_product.add({
-                      'name': nameCtrl.text,
-                      'image': imageCtrl.text.isEmpty
-                          ? 'assets/App_Icon.png'
-                          : imageCtrl.text,
-                      'categories': selectedCategories,
-                      'price': int.tryParse(priceCtrl.text) ?? 0,
-                      'stock': int.tryParse(stockCtrl.text) ?? 0,
-                      'ID': Pro_product.length,
-                    });
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text("Cancel"),
+              ),
+              TextButton(
+                onPressed: () async {
+                  // 🔥 Call your Flask backend here
+                  bool ok = await addProductToInventory(
+                    name: nameCtrl.text,
+                    categoryId: selectedCategories.isNotEmpty
+                        ? selectedCategories.first.toString()
+                        : "0",
+                    price: double.tryParse(priceCtrl.text) ?? 0,
+                    stock: int.tryParse(stockCtrl.text) ?? 0,
+                    unit: "pcs", // you can change to a TextField later
+                  );
 
-                    setState(() {});
-                    Navigator.pop(ctx);
-                  },
-                  child: const Text("Save"),
-                );
+                  if (!mounted) return;
 
+                  if (ok) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Product added successfully!"),
+                      ),
+                    );
+                    await _loadProducts(); // refresh table from backend
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Failed to add product"),
+                      ),
+                    );
+                  }
 
-                setState(() {});
-                Navigator.pop(ctx);
-              },
-              child: Text("Save"),
-            ),
-          ],
-
-        );
-      }),
+                  Navigator.pop(ctx); // close dialog
+                },
+                child: const Text("Save"),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -242,7 +292,7 @@ void editProductDialog(int index) {
         StatefulBuilder(builder: (ctx, setInner) {
       return AlertDialog(
         title: const Text("Edit Product"),
-        content: SizedBox(
+        content: SizedBox( 
           width: 400,
           height: 400,
           child: SingleChildScrollView(
@@ -325,7 +375,24 @@ void editProductDialog(int index) {
     Dash_categories.firstWhere((e) => e['id'] == id)['name']
     ).join(", ");
   }
+  
+  Future<void> _deleteProductFromBackend(Product p) async {
+    final ok = await _productService.deleteProduct(p.productId);
 
+    if (!mounted) return;
+
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Product deleted successfully")),
+      );
+      await _loadProducts(); // refresh table from backend
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Failed to delete product")),
+      );
+    }
+  }
+  
 // ==================================================================
 // BUILD UI
 // ==================================================================
@@ -437,7 +504,7 @@ void editProductDialog(int index) {
               rows: List.generate(_products.length, (index) {
                 final p = _products[index];
 
-                return DataRow(
+                  return DataRow(
                   cells: [
                     DataCell(Text(p.productId.toString())),
                     DataCell(Row(
@@ -451,7 +518,11 @@ void editProductDialog(int index) {
                     DataCell(Text(p.categoryId?.toString() ?? '')),
                     DataCell(Text(p.price.toString())),
                     DataCell(Text(p.stockQuantity.toString())),
-                    DataCell(Text(DateFormat("yyyy-MM-dd").format(DateTime.now()))),
+                    DataCell(
+                      Text(
+                        DateFormat("yyyy-MM-dd").format(DateTime.now()),
+                      ),
+                    ),
                     DataCell(
                       Row(
                         children: [
@@ -463,19 +534,51 @@ void editProductDialog(int index) {
                           ),
                           const SizedBox(width: 5),
                           ElevatedButton(
-                            onPressed: () {
-                              // later: tie to backend delete
+                            onPressed: () async {
+                              // optional confirm dialog
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text("Delete Product"),
+                                  content: Text(
+                                    "Are you sure you want to delete '${p.productName}'?",
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(ctx, false),
+                                      child: const Text("Cancel"),
+                                    ),
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(ctx, true),
+                                      child: const Text(
+                                        "Delete",
+                                        style: TextStyle(color: Colors.red),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              if (confirm == true) {
+                                await _deleteProductFromBackend(p);
+                              }
                             },
                             style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red),
-                            child: const Text("Delete",
-                                style: TextStyle(color: Colors.white)),
+                              backgroundColor: Colors.red,
+                            ),
+                            child: const Text(
+                              "Delete",
+                              style: TextStyle(color: Colors.white),
+                            ),
                           ),
                         ],
                       ),
                     ),
                   ],
                 );
+
               }),
 
             ),
