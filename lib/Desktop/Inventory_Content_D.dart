@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:intl/intl.dart';
 import 'package:data_table_2/data_table_2.dart';
+import '../models/product.dart';
+import '../services/product_service.dart';
 
 class InventoryContentD extends StatefulWidget {
   const InventoryContentD({super.key});
@@ -13,7 +15,31 @@ class InventoryContentD extends StatefulWidget {
 }
 
 class _InventoryContentDState extends State<InventoryContentD> {
+  final _productService = ProductService();
+  List<Product> _products = [];
+  bool _isLoading = true;
+  String? _error;
 
+    @override
+  void initState() {
+    super.initState();
+    _loadProducts();  // <-- THIS CALLS THE API AUTOMATICALLY
+  }
+
+  Future<void> _loadProducts() async {
+    try {
+      final products = await _productService.fetchProducts();
+      setState(() {
+        _products = products;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
 // =============================================================
 // CATEGORY CRUD
 // =============================================================
@@ -98,13 +124,11 @@ class _InventoryContentDState extends State<InventoryContentD> {
   void deleteCategory(int index) {
     int catID = Dash_categories[index]['id'];
 
-    // Remove category from all products
     for (var p in Pro_product) {
       p['categories'].remove(catID);
     }
 
     Dash_categories.removeAt(index);
-
     setState(() {});
   }
 
@@ -165,20 +189,31 @@ class _InventoryContentDState extends State<InventoryContentD> {
             ),
             TextButton(
               onPressed: () {
-                Pro_product.add({
-                  'name': nameCtrl.text,
-                  'image': imageCtrl.text.isEmpty ? 'assets/App_Icon.png' : imageCtrl.text,
-                  'categories': selectedCategories,
-                  'price': int.tryParse(priceCtrl.text) ?? 0,
-                  'stock': int.tryParse(stockCtrl.text) ?? 0,
-                  'ID': Pro_product.length,
-                });
+                TextButton(
+                  onPressed: () {
+                    Pro_product.add({
+                      'name': nameCtrl.text,
+                      'image': imageCtrl.text.isEmpty
+                          ? 'assets/App_Icon.png'
+                          : imageCtrl.text,
+                      'categories': selectedCategories,
+                      'price': int.tryParse(priceCtrl.text) ?? 0,
+                      'stock': int.tryParse(stockCtrl.text) ?? 0,
+                      'ID': Pro_product.length,
+                    });
+
+                    setState(() {});
+                    Navigator.pop(ctx);
+                  },
+                  child: const Text("Save"),
+                );
+
 
                 setState(() {});
                 Navigator.pop(ctx);
               },
               child: Text("Save"),
-            )
+            ),
           ],
 
         );
@@ -186,78 +221,99 @@ class _InventoryContentDState extends State<InventoryContentD> {
     );
   }
 
-  void editProductDialog(int index) {
-    var p = Pro_product[index];
+void editProductDialog(int index) {
+  // use the OLD local list, not _products
+  var p = Pro_product[index];
 
-    TextEditingController nameCtrl = TextEditingController(text: p['name']);
-    TextEditingController imageCtrl = TextEditingController(text: p['image']);
-    TextEditingController priceCtrl = TextEditingController(text: p['price'].toString());
-    TextEditingController stockCtrl = TextEditingController(text: p['stock'].toString());
+  TextEditingController nameCtrl =
+      TextEditingController(text: p['name']);
+  TextEditingController imageCtrl =
+      TextEditingController(text: p['image']);
+  TextEditingController priceCtrl =
+      TextEditingController(text: p['price'].toString());
+  TextEditingController stockCtrl =
+      TextEditingController(text: p['stock'].toString());
 
-    List<int> selectedCategories = List.from(p['categories']);
+  List<int> selectedCategories = List.from(p['categories']);
 
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(builder: (ctx, setInner) {
-        return AlertDialog(
-          title: Text("Edit Product"),
-          content: SizedBox(
-            width: 400,
-            height: 400,
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  TextField(controller: nameCtrl, decoration: InputDecoration(labelText: "Name")),
-                  TextField(controller: imageCtrl, decoration: InputDecoration(labelText: "Image Path")),
-                  TextField(controller: priceCtrl, decoration: InputDecoration(labelText: "Price")),
-                  TextField(controller: stockCtrl, decoration: InputDecoration(labelText: "Stock")),
-
-                  const SizedBox(height: 20),
-                  Text("Categories:", style: TextStyle(fontWeight: FontWeight.bold)),
-
-                  ...Dash_categories.map((e) {
-                    return CheckboxListTile(
-                      title: Text(e['name']),
-                      value: selectedCategories.contains(e['id']),
-                      onChanged: (v) {
-                        setInner(() {
-                          if (v == true) {
-                            selectedCategories.add(e['id']);
-                          } else {
-                            selectedCategories.remove(e['id']);
-                          }
-                        });
-                      },
-                    );
-                  }).toList(),
-                ],
-              ),
+  showDialog(
+    context: context,
+    builder: (ctx) =>
+        StatefulBuilder(builder: (ctx, setInner) {
+      return AlertDialog(
+        title: const Text("Edit Product"),
+        content: SizedBox(
+          width: 400,
+          height: 400,
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                TextField(
+                    controller: nameCtrl,
+                    decoration: const InputDecoration(
+                        labelText: "Name")),
+                TextField(
+                    controller: imageCtrl,
+                    decoration: const InputDecoration(
+                        labelText: "Image Path")),
+                TextField(
+                    controller: priceCtrl,
+                    decoration: const InputDecoration(
+                        labelText: "Price")),
+                TextField(
+                    controller: stockCtrl,
+                    decoration: const InputDecoration(
+                        labelText: "Stock")),
+                const SizedBox(height: 20),
+                const Text("Categories:",
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                ...Dash_categories.map((e) {
+                  return CheckboxListTile(
+                    title: Text(e['name']),
+                    value: selectedCategories.contains(e['id']),
+                    onChanged: (v) {
+                      setInner(() {
+                        if (v == true) {
+                          selectedCategories.add(e['id']);
+                        } else {
+                          selectedCategories.remove(e['id']);
+                        }
+                      });
+                    },
+                  );
+                }).toList(),
+              ],
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text("Cancel"),
-            ),
-            TextButton(
-              onPressed: () {
-                p['name'] = nameCtrl.text;
-                p['image'] = imageCtrl.text.isEmpty ? 'assets/App_Icon.png' : imageCtrl.text;
-                p['price'] = int.tryParse(priceCtrl.text) ?? p['price'];
-                p['stock'] = int.tryParse(stockCtrl.text) ?? p['stock'];
-                p['categories'] = selectedCategories;
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              Pro_product.add({
+                'name': nameCtrl.text,
+                'image': imageCtrl.text.isEmpty
+                    ? 'assets/App_Icon.png'
+                    : imageCtrl.text,
+                'categories': selectedCategories,
+                'price': int.tryParse(priceCtrl.text) ?? 0,
+                'stock': int.tryParse(stockCtrl.text) ?? 0,
+                'ID': Pro_product.length,
+              });
 
-                setState(() {});
-                Navigator.pop(ctx);
-              },
-              child: Text("Update"),
-            )
-          ],
-
-        );
-      }),
-    );
-  }
+              setState(() {});
+              Navigator.pop(ctx);
+            },
+            child: const Text("Save"),
+          )
+        ],
+      );
+    }),
+  );
+}
 
   void deleteProduct(int index) {
     Pro_product.removeAt(index);
@@ -378,48 +434,50 @@ class _InventoryContentDState extends State<InventoryContentD> {
                 DataColumn2(label: Text("Date")),
                 DataColumn2(label: Text("")),
               ],
-              rows: List.generate(Pro_product.length, (index) {
-                var p = Pro_product[index];
+              rows: List.generate(_products.length, (index) {
+                final p = _products[index];
 
                 return DataRow(
                   cells: [
-                    DataCell(Text(p['ID'].toString())),
-
+                    DataCell(Text(p.productId.toString())),
                     DataCell(Row(
                       children: [
-                        Image.asset(p['image'], height: 60, width: 60),
-                        SizedBox(width: 10),
-                        Text(p['name'], style: TextStyle(fontWeight: FontWeight.bold)),
+                        Text(
+                          p.productName,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ],
                     )),
-
-                    DataCell(Text(getCategoryNames(p['categories']))),
-
-                    DataCell(Text(p['price'].toString())),
-
-                    DataCell(Text(p['stock'].toString())),
-
+                    DataCell(Text(p.categoryId?.toString() ?? '')),
+                    DataCell(Text(p.price.toString())),
+                    DataCell(Text(p.stockQuantity.toString())),
                     DataCell(Text(DateFormat("yyyy-MM-dd").format(DateTime.now()))),
-
                     DataCell(
                       Row(
                         children: [
                           ElevatedButton(
-                            onPressed: () => editProductDialog(index),
-                            child: Text("Edit"),
+                            onPressed: () {
+                              // later: tie to backend edit
+                            },
+                            child: const Text("Edit"),
                           ),
-                          SizedBox(width: 5),
+                          const SizedBox(width: 5),
                           ElevatedButton(
-                            onPressed: () => deleteProduct(index),
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                            child: Text("Delete", style: TextStyle(color: Colors.white)),
-                          )
+                            onPressed: () {
+                              // later: tie to backend delete
+                            },
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red),
+                            child: const Text("Delete",
+                                style: TextStyle(color: Colors.white)),
+                          ),
                         ],
                       ),
                     ),
                   ],
                 );
               }),
+
             ),
           ),
 
