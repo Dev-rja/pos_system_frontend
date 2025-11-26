@@ -369,13 +369,103 @@ void editProductDialog(int index) {
     Pro_product.removeAt(index);
     setState(() {});
   }
+  void _editProductDialog(Product p) {
+    TextEditingController nameCtrl =
+        TextEditingController(text: p.productName);
+    TextEditingController priceCtrl =
+        TextEditingController(text: p.price.toString());
+    TextEditingController stockCtrl =
+        TextEditingController(text: p.stockQuantity.toString());
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text("Edit ${p.productName}"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameCtrl,
+              decoration: const InputDecoration(labelText: "Name"),
+            ),
+            TextField(
+              controller: priceCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: "Price"),
+            ),
+            TextField(
+              controller: stockCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: "Stock"),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () async {
+              bool ok = await _updateProductToBackend(
+                p.productId,
+                nameCtrl.text,
+                double.tryParse(priceCtrl.text) ?? p.price,
+                int.tryParse(stockCtrl.text) ?? p.stockQuantity,
+              );
+
+              if (ok) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Product updated!")),
+                );
+                await _loadProducts(); // refresh products
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Failed to update product")),
+                );
+              }
+
+              Navigator.pop(ctx);
+            },
+            child: const Text("Save"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<bool> _updateProductToBackend(
+    int id,
+    String name,
+    double price,
+    int stock,
+  ) async {
+    var url = Uri.parse("http://127.0.0.1:5000/api/update_product/$id");
+
+    try {
+      var response = await http.put(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "product_name": name,
+          "price": price,
+          "stock_quantity": stock,
+        }),
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print("ERROR EDIT: $e");
+      return false;
+    }
+  }
 
   String getCategoryNames(List<int> catIDs) {
-    return catIDs.map((id) =>
-    Dash_categories.firstWhere((e) => e['id'] == id)['name']
-    ).join(", ");
+    return catIDs
+        .map((id) => Dash_categories.firstWhere((e) => e['id'] == id)['name'])
+        .join(", ");
   }
-  
+
   Future<void> _deleteProductFromBackend(Product p) async {
     final ok = await _productService.deleteProduct(p.productId);
 
@@ -392,6 +482,7 @@ void editProductDialog(int index) {
       );
     }
   }
+
   
 // ==================================================================
 // BUILD UI
@@ -494,8 +585,8 @@ void editProductDialog(int index) {
               minWidth: 1600,
               columns: const [
                 DataColumn2(label: Text("ID")),
-                DataColumn2(label: Text("Product")),
                 DataColumn2(label: Text("Categories")),
+                DataColumn2(label: Text("Product")),
                 DataColumn2(label: Text("Price")),
                 DataColumn2(label: Text("Stock")),
                 DataColumn2(label: Text("Date")),
@@ -504,23 +595,20 @@ void editProductDialog(int index) {
               rows: List.generate(_products.length, (index) {
                 final p = _products[index];
 
-                  return DataRow(
+                return DataRow(
                   cells: [
                     DataCell(Text(p.productId.toString())),
-                    DataCell(Row(
-                      children: [
-                        Text(
-                          p.productName,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    )),
-                    DataCell(Text(p.categoryId?.toString() ?? '')),
+                    DataCell(Text(p.categoryName ?? '')),  // moved here
+                    DataCell(Row(children: [
+                      Text(
+                        p.productName,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ])),
                     DataCell(Text(p.price.toString())),
                     DataCell(Text(p.stockQuantity.toString())),
-                    DataCell(
-                      Text(
-                        DateFormat("yyyy-MM-dd").format(DateTime.now()),
+                    DataCell(Text(
+                      DateFormat("yyyy-MM-dd").format(DateTime.now()),
                       ),
                     ),
                     DataCell(
@@ -528,7 +616,7 @@ void editProductDialog(int index) {
                         children: [
                           ElevatedButton(
                             onPressed: () {
-                              // later: tie to backend edit
+                              _editProductDialog(p);
                             },
                             child: const Text("Edit"),
                           ),
@@ -578,9 +666,8 @@ void editProductDialog(int index) {
                     ),
                   ],
                 );
-
-              }),
-
+              },
+              ),
             ),
           ),
 
