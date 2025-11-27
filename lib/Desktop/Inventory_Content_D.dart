@@ -9,6 +9,9 @@ import '../services/product_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:async';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+
 
 class InventoryContentD extends StatefulWidget {
   const InventoryContentD({super.key});
@@ -48,6 +51,9 @@ class _InventoryContentDState extends State<InventoryContentD> {
   bool _isLoading = true;
   String? _error;
   Timer? _autoRefreshTimer;
+  File? _selectedImage;
+  final ImagePicker _picker = ImagePicker();
+
 
   @override
   void initState() {
@@ -87,6 +93,18 @@ class _InventoryContentDState extends State<InventoryContentD> {
       setState(() {
         _error = e.toString();
         _isLoading = false;
+      });
+    }
+  }
+  Future<void> _pickImage(StateSetter setInner) async {
+    final XFile? picked = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80, // compress
+    );
+
+    if (picked != null) {
+      setInner(() {
+        _selectedImage = File(picked.path);
       });
     }
   }
@@ -290,7 +308,6 @@ class _InventoryContentDState extends State<InventoryContentD> {
 
   void addProductDialog() {
     TextEditingController nameCtrl = TextEditingController();
-    TextEditingController imageCtrl = TextEditingController();
     TextEditingController priceCtrl = TextEditingController();
     TextEditingController stockCtrl = TextEditingController();
 
@@ -305,34 +322,60 @@ class _InventoryContentDState extends State<InventoryContentD> {
               title: const Text("Add Product"),
               content: SizedBox(
                 width: 400,
-                height: 400,
+                height: 500,
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
+                      // NAME
                       TextField(
                         controller: nameCtrl,
                         decoration: const InputDecoration(labelText: "Name"),
                       ),
-                      TextField(
-                        controller: imageCtrl,
-                        decoration:
-                            const InputDecoration(labelText: "Image Path"),
+                      const SizedBox(height: 10),
+
+                      // IMAGE PICKER (NEW)
+                      GestureDetector(
+                        onTap: () => _pickImage(setInner),
+                        child: Container(
+                          height: 150,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey),
+                          ),
+                          child: _selectedImage == null
+                              ? const Center(child: Text("Tap to select image"))
+                              : ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.file(
+                                    _selectedImage!,
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                  ),
+                                ),
+                        ),
                       ),
+                      const SizedBox(height: 15),
+
+                      // PRICE
                       TextField(
                         controller: priceCtrl,
                         decoration: const InputDecoration(labelText: "Price"),
                         keyboardType: TextInputType.number,
                       ),
+                      const SizedBox(height: 15),
+
+                      // STOCK
                       TextField(
                         controller: stockCtrl,
                         decoration: const InputDecoration(labelText: "Stock"),
                         keyboardType: TextInputType.number,
                       ),
                       const SizedBox(height: 20),
-                      const Text(
-                        "Categories:",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
+
+                      const Text("Categories:",
+                          style: TextStyle(fontWeight: FontWeight.bold)),
                       ...Dash_categories.map((e) {
                         return CheckboxListTile(
                           title: Text(e['name']),
@@ -347,7 +390,7 @@ class _InventoryContentDState extends State<InventoryContentD> {
                             });
                           },
                         );
-                      }).toList(),
+                      }),
                     ],
                   ),
                 ),
@@ -359,7 +402,6 @@ class _InventoryContentDState extends State<InventoryContentD> {
                 ),
                 TextButton(
                   onPressed: () async {
-                    // ---- VALIDATION ----
                     final price = double.tryParse(priceCtrl.text) ?? 0;
                     final stock = int.tryParse(stockCtrl.text) ?? 0;
 
@@ -369,36 +411,42 @@ class _InventoryContentDState extends State<InventoryContentD> {
                         selectedCategories.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text(
-                            "Please fill all fields. Price and stock must be > 0.",
-                          ),
+                          content: Text("Please fill all fields correctly"),
                         ),
                       );
-                      return; // stop here
+                      return;
                     }
 
-                    // ---- API CALL ----
-                    final ok = await addProductToInventory(
-                      name: nameCtrl.text,
-                      categoryId: selectedCategories.first.toString(),
-                      price: price,
-                      stock: stock,
-                      unit: "pcs",
-                    );
+                    // --- SEND TO BACKEND WITH IMAGE ---
+                    var url = Uri.parse("http://127.0.0.1:5000/api/add_product");
+                    var request = http.MultipartRequest('POST', url);
 
-                    if (!mounted) return;
+                    request.fields['product_name'] = nameCtrl.text;
+                    request.fields['category_id'] =
+                        selectedCategories.first.toString();
+                    request.fields['price'] = price.toString();
+                    request.fields['stock_quantity'] = stock.toString();
+                    request.fields['unit'] = "pcs";
 
-                    if (ok) {
+                    if (_selectedImage != null) {
+                      request.files.add(await http.MultipartFile.fromPath(
+                        'image',                 // must match backend key
+                        _selectedImage!.path,
+                      ));
+                    }
+
+                    var response = await request.send();
+
+                    if (response.statusCode == 200) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Product added successfully!"),
-                        ),
+                        const SnackBar(content: Text("Product added!")),
                       );
                       await _loadProducts();
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Failed to add product"),
+                        SnackBar(
+                          content: Text(
+                              "Failed: ${response.statusCode}"),
                         ),
                       );
                     }
@@ -414,6 +462,7 @@ class _InventoryContentDState extends State<InventoryContentD> {
       },
     );
   }
+
 
 
 void editProductDialog(int index) {
