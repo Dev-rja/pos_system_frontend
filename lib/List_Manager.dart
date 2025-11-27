@@ -331,12 +331,13 @@ final List<Map<String, dynamic>> Pro_product = [
 //==============================================================================
 
 class ProProductBuilder extends StatelessWidget {
-  final Function(Map<String, dynamic>) onAddToOrder;
   final int selectedCategoryId;
+  final void Function(Map<String, dynamic> product) onAddToOrder;
 
-  ProProductBuilder({
-    required this.onAddToOrder,
+  const ProProductBuilder({
+    super.key,
     required this.selectedCategoryId,
+    required this.onAddToOrder,
   });
 
   @override
@@ -387,7 +388,8 @@ class ProProductBoxStyle extends StatelessWidget {
   final int stock;
   final VoidCallback onAdd; // Callback when "Add" is pressed
 
-  ProProductBoxStyle({
+  const ProProductBoxStyle({
+    super.key,
     required this.name,
     required this.imagePath,
     required this.price,
@@ -405,12 +407,13 @@ class ProProductBoxStyle extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            // IMAGE
             Flexible(
               child: Container(
-                margin: EdgeInsets.only(top: 10, bottom: 10),
+                margin: const EdgeInsets.only(top: 10, bottom: 10),
                 alignment: Alignment.center,
-                height: 250,
-                width: 250,
+                height: 180,
+                width: 180,
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.black, width: 0.1),
                   image: DecorationImage(
@@ -420,6 +423,8 @@ class ProProductBoxStyle extends StatelessWidget {
                 ),
               ),
             ),
+
+            // NAME
             AutoSizeText(
               name,
               style: const TextStyle(
@@ -430,6 +435,8 @@ class ProProductBoxStyle extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
+
+            // STOCK
             AutoSizeText(
               'Stock: $stock',
               style: const TextStyle(
@@ -440,6 +447,8 @@ class ProProductBoxStyle extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
+
+            // PRICE
             AutoSizeText(
               NumberFormat.currency(
                 symbol: '₱',
@@ -454,16 +463,25 @@ class ProProductBoxStyle extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
 
+            // ADD BUTTON
             Container(
-              margin: EdgeInsets.only(top: 5),
-              child: ElevatedButton(
-                onPressed: onAdd,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                ),
-                child: const Text(
-                  "Add",
-                  style: TextStyle(color: Colors.white),
+              margin: const EdgeInsets.only(top: 5),
+              child: GestureDetector(
+                onTap: onAdd,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color.fromRGBO(0, 180, 80, 1), // light green
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    "Add",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -473,6 +491,7 @@ class ProProductBoxStyle extends StatelessWidget {
     );
   }
 }
+
 
 
 //==============================================================================

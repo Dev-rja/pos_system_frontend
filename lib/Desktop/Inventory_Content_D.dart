@@ -8,6 +8,7 @@ import '../models/product.dart';
 import '../services/product_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'dart:async';
 
 class InventoryContentD extends StatefulWidget {
   const InventoryContentD({super.key});
@@ -46,17 +47,38 @@ class _InventoryContentDState extends State<InventoryContentD> {
   List<Product> _products = [];
   bool _isLoading = true;
   String? _error;
+  Timer? _autoRefreshTimer;
 
   @override
   void initState() {
     super.initState();
+
     _loadProducts();              // load products
     _loadCategoriesFromBackend(); // load categories from backend
+
+    // 🔁 Auto-refresh products every 5 seconds
+    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      _loadProducts();  // calls backend and updates _products + UI
+    });
+  }
+
+  @override
+  void dispose() {
+    _autoRefreshTimer?.cancel(); // stop the timer when screen is destroyed
+    super.dispose();
   }
 
   Future<void> _loadProducts() async {
     try {
       final products = await _productService.fetchProducts();
+
+      // 👇 DEBUG
+      print('---- PRODUCTS FROM API ----');
+      for (var p in products) {
+        print('${p.productName}  stock: ${p.stockQuantity}');
+      }
+      print('---------------------------');
+
       setState(() {
         _products = products;
         _isLoading = false;
@@ -68,6 +90,7 @@ class _InventoryContentDState extends State<InventoryContentD> {
       });
     }
   }
+
 // =============================================================
 // CATEGORY CRUD
 // =============================================================
