@@ -793,12 +793,37 @@ void editProductDialog(int index) {
                   cells: [
                     DataCell(Text(p.productId.toString())),
                     DataCell(Text(p.categoryName ?? '')),  // moved here
-                    DataCell(Row(children: [
-                      Text(
-                        p.productName,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                    DataCell(
+                      Row(
+                        children: [
+                          if (p.imagePath != null)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: Image.network(
+                                'http://127.0.0.1:5000/static/uploads/${p.imagePath}',
+                                width: 50,
+                                height: 50,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    const Icon(Icons.broken_image),
+                              ),
+                            )
+                          else
+                            const Padding(
+                              padding: EdgeInsets.only(right: 8.0),
+                              child: Icon(Icons.image_not_supported),
+                            ),
+                          Expanded(
+                            child: Text(
+                              p.productName,
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
-                    ])),
+                    ),
+
                     DataCell(Text(p.price.toString())),
                     DataCell(Text(p.stockQuantity.toString())),
                     DataCell(Text(

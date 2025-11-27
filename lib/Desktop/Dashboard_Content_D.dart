@@ -165,6 +165,7 @@ class _DashboardContentState extends State<DashboardContent> {
                                 child: TopItemCard(
                                   rank: item['rank'] ?? 0,
                                   name: item['product_name'] ?? 'Unknown',
+                                  imagePath: item['image_path'],
                                 ),
                               );
                             }).toList(),
@@ -211,12 +212,17 @@ class CategoryCard extends StatelessWidget {
   }
 }
 
-// Simple top item card
 class TopItemCard extends StatelessWidget {
   final int rank;
   final String name;
+  final String? imagePath; // 👈 NEW field
 
-  const TopItemCard({super.key, required this.rank, required this.name});
+  const TopItemCard({
+    super.key,
+    required this.rank,
+    required this.name,
+    this.imagePath,        // 👈 initialize the final field
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -224,6 +230,7 @@ class TopItemCard extends StatelessWidget {
       width: 160,
       child: Column(
         children: [
+          // "Top X" badge
           Container(
             padding:
                 const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
@@ -240,6 +247,8 @@ class TopItemCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
+
+          // Card with image + name
           Container(
             height: 110,
             decoration: BoxDecoration(
@@ -254,15 +263,39 @@ class TopItemCard extends StatelessWidget {
               ],
             ),
             padding: const EdgeInsets.all(10),
-            child: Center(
-              child: Text(
-                name,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.outfit(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // 🔥 product image
+                if (imagePath != null)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.network(
+                      'http://127.0.0.1:5000/static/uploads/$imagePath',
+                      height: 50,
+                      width: 50,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Icon(Icons.broken_image, size: 32),
+                    ),
+                  )
+                else
+                  const Icon(Icons.image_not_supported, size: 32),
+
+                const SizedBox(height: 6),
+
+                // product name
+                Text(
+                  name,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.outfit(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         ],
@@ -270,3 +303,4 @@ class TopItemCard extends StatelessWidget {
     );
   }
 }
+

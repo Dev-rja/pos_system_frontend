@@ -301,12 +301,17 @@ class _ProcessOrderContentDState extends State<ProcessOrderContentD> {
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: Image.asset(
-                    'assets/App_Icon.png',
-                    fit: BoxFit.contain,
-                  ),
+                  child: p.imagePath != null
+                      ? Image.network(
+                          'http://127.0.0.1:5000/static/uploads/${p.imagePath}',
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(Icons.broken_image, size: 40),
+                        )
+                      : const Icon(Icons.image_not_supported, size: 40),
                 ),
               ),
+
               const SizedBox(height: 4),
               Text(
                 p.productName,
