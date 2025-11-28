@@ -7,18 +7,21 @@ import 'Process_Order_Content_D.dart';
 import 'Inventory_Content_D.dart';
 import 'Transaction_History_Content_D.dart';
 
-
 class D_Dashboad_Page extends StatefulWidget {
-  const D_Dashboad_Page({super.key});
+  final String username;
+
+  const D_Dashboad_Page({
+    super.key,
+    this.username = 'User_Name',
+  });
 
   @override
   State<D_Dashboad_Page> createState() => _D_Dashboad_PageState();
-  }
+}
 
 class _D_Dashboad_PageState extends State<D_Dashboad_Page> {
   bool _isNavigationRailExpanded = false;
   int _selectedIndex = 0;
-
 
   final List<Widget> _mainContentPages = [
     DashboardContent(),
@@ -27,7 +30,6 @@ class _D_Dashboad_PageState extends State<D_Dashboad_Page> {
     HistoryContentD(),
     const Center(child: Text('Transaction History Page')),
   ];
-
 
   double get _appIconSize => _isNavigationRailExpanded ? 100 : 50;
   double get _leadingSizedBoxHeight => _isNavigationRailExpanded ? 0 : 90;
@@ -48,11 +50,11 @@ class _D_Dashboad_PageState extends State<D_Dashboad_Page> {
                 const VerticalDivider(thickness: 0.2, width: 1),
                 Expanded(
                   child: ListView(
-                      children: [
-                        _buildCustomAppBar(),
-                        _mainContentPages[_selectedIndex],
-                      ],
-                    ),
+                    children: [
+                      _buildCustomAppBar(),
+                      _mainContentPages[_selectedIndex],
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -117,47 +119,40 @@ class _D_Dashboad_PageState extends State<D_Dashboad_Page> {
 
   List<NavigationRailDestination> _buildNavigationRailDestinations() {
     return [
-
       NavigationRailDestination(
-        icon: Icon(Icons.home_outlined), // Consider outlined icons for inactive
-        selectedIcon: Icon(Icons.home), // Filled icon for active
-        label: AutoSizeText('Dashboard'),
+        icon: const Icon(Icons.home_outlined),
+        selectedIcon: const Icon(Icons.home),
+        label: const AutoSizeText('Dashboard'),
       ),
-
       NavigationRailDestination(
-        icon: Icon(Icons.shopping_basket_outlined),
-        selectedIcon: Icon(Icons.shopping_basket),
-        label: AutoSizeText('Process Order'),
+        icon: const Icon(Icons.shopping_basket_outlined),
+        selectedIcon: const Icon(Icons.shopping_basket),
+        label: const AutoSizeText('Process Order'),
       ),
-
       NavigationRailDestination(
-        icon: Image.asset('assets/cube-outline.png',
+        icon: Image.asset(
+          'assets/cube-outline.png',
           width: 23,
-          height: 23,),
-        selectedIcon: Image.asset('assets/3d-cube.png',
+          height: 23,
+        ),
+        selectedIcon: Image.asset(
+          'assets/3d-cube.png',
           width: 23,
-          height: 23,),
-        label: AutoSizeText('Inventory'),
+          height: 23,
+        ),
+        label: const AutoSizeText('Inventory'),
       ),
-
       NavigationRailDestination(
-        icon: Icon(Icons.receipt_long_outlined),
-        selectedIcon: Icon(Icons.receipt_long),
-        label: AutoSizeText('Transaction History'),
+        icon: const Icon(Icons.receipt_long_outlined),
+        selectedIcon: const Icon(Icons.receipt_long),
+        label: const AutoSizeText('Transaction History'),
       ),
-
-      //NavigationRailDestination(
-      //  icon: Icon(Icons.bar_chart_outlined),
-      //  selectedIcon: Icon(Icons.bar_chart),
-      //  label: AutoSizeText('Reports Analytics'),
-      //),
-
     ];
   }
 
   Widget _buildNavigationRailTrailing() {
     return Column(
-      mainAxisSize: MainAxisSize.min, // Important for Column in trailing
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           decoration: BoxDecoration(
@@ -165,12 +160,13 @@ class _D_Dashboad_PageState extends State<D_Dashboad_Page> {
             color: const Color.fromRGBO(250, 0, 0, .5),
           ),
           child: IconButton(
-              icon: const Icon(Icons.logout_sharp, color: Colors.white), // Explicit color
-              onPressed: () {
-                // Handle logout
-              }),
+            icon: const Icon(Icons.logout_sharp, color: Colors.white),
+            onPressed: () {
+              // Handle logout
+            },
+          ),
         ),
-        const SizedBox(height: 4), // Consistent spacing
+        const SizedBox(height: 4),
         const AutoSizeText(
           'Log Out',
           style: TextStyle(
@@ -179,7 +175,7 @@ class _D_Dashboad_PageState extends State<D_Dashboad_Page> {
             color: Colors.black,
           ),
         ),
-        const SizedBox(height: 30), // Ensure this spacing is intentional
+        const SizedBox(height: 30),
       ],
     );
   }
@@ -192,10 +188,11 @@ class _D_Dashboad_PageState extends State<D_Dashboad_Page> {
       'Transaction History',
       'Reports Analytics',
     ];
+
     return AppBar(
-      title: AutoSizeText(appBarTitles[_selectedIndex],
-        style:
-        GoogleFonts.poppins(
+      title: AutoSizeText(
+        appBarTitles[_selectedIndex],
+        style: GoogleFonts.poppins(
           fontWeight: FontWeight.bold,
           fontSize: 30,
           color: Colors.black,
@@ -212,29 +209,26 @@ class _D_Dashboad_PageState extends State<D_Dashboad_Page> {
               radius: 25,
             ),
             const SizedBox(width: 10),
-            const AutoSizeText(
-              'Welcome, User_Name', // Replace with actual user data
-              style: TextStyle(
+            AutoSizeText(
+               'Welcome, ${widget.username}!',// use username from login
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
                 color: Colors.black,
               ),
             ),
             const SizedBox(width: 20),
-            // Consider making IconButton larger by increasing iconSize or using padding
             IconButton(
-              iconSize: 30, // Adjusted for better visual balance
+              iconSize: 30,
               icon: const Icon(Icons.notifications_none_outlined),
               onPressed: () {
                 print("Notification icon pressed!");
               },
             ),
-            const SizedBox(width: 15), // Use constant for padding
+            const SizedBox(width: 15),
           ],
         )
       ],
     );
   }
 }
-
-
