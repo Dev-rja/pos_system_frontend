@@ -210,7 +210,7 @@ class _D_Dashboad_PageState extends State<D_Dashboad_Page> {
             ),
             const SizedBox(width: 10),
             AutoSizeText(
-               'Welcome, ${widget.username}!',// use username from login
+              'Welcome, ${formatUsername(widget.username)}!',
               style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
@@ -230,5 +230,12 @@ class _D_Dashboad_PageState extends State<D_Dashboad_Page> {
         )
       ],
     );
+  }
+
+  String formatUsername(String username) {
+    return username.replaceAll('_', ' ').split(' ').map((word) {
+      if (word.isEmpty) return '';
+      return '${word[0].toUpperCase()}${word.substring(1)}';
+    }).join(' ');
   }
 }
