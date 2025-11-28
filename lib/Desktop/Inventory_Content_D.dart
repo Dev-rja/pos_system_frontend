@@ -12,7 +12,6 @@ import 'dart:async';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 
-
 class InventoryContentD extends StatefulWidget {
   const InventoryContentD({super.key});
 
@@ -27,7 +26,7 @@ Future<bool> addProductToInventory({
   required int stock,
   required String unit,
 }) async {
-  var url = Uri.parse("http://127.0.0.1:5000/api/add_product");  // CHANGE FOR PHONE TESTING
+  var url = Uri.parse("http://127.0.0.1:5000/api/add_product"); // CHANGE FOR PHONE TESTING
 
   var request = http.MultipartRequest('POST', url);
   request.fields['product_name'] = name;
@@ -56,17 +55,16 @@ class _InventoryContentDState extends State<InventoryContentD> {
 
   File? _selectedCategoryImage;
 
-
   @override
   void initState() {
     super.initState();
 
-    _loadProducts();              // load products
+    _loadProducts(); // load products
     _loadCategoriesFromBackend(); // load categories from backend
 
     // 🔁 Auto-refresh products every 5 seconds
     _autoRefreshTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      _loadProducts();  // calls backend and updates _products + UI
+      _loadProducts(); // calls backend and updates _products + UI
     });
   }
 
@@ -98,6 +96,7 @@ class _InventoryContentDState extends State<InventoryContentD> {
       });
     }
   }
+
   Future<void> _pickImage(StateSetter setInner) async {
     final XFile? picked = await _picker.pickImage(
       source: ImageSource.gallery,
@@ -124,9 +123,9 @@ class _InventoryContentDState extends State<InventoryContentD> {
     }
   }
 
-// =============================================================
-// CATEGORY CRUD
-// =============================================================
+  // =============================================================
+  // CATEGORY CRUD
+  // =============================================================
   // ---- CALL API TO ADD CATEGORY ----
   Future<int?> addCategoryToBackend(
     String name, {
@@ -141,7 +140,7 @@ class _InventoryContentDState extends State<InventoryContentD> {
       if (imageFile != null) {
         request.files.add(
           await http.MultipartFile.fromPath(
-            'image',       // must match backend key
+            'image', // must match backend key
             imageFile.path,
           ),
         );
@@ -162,6 +161,7 @@ class _InventoryContentDState extends State<InventoryContentD> {
       return null;
     }
   }
+
   // ---- LOAD CATEGORIES FROM BACKEND INTO Dash_categories ----
   Future<void> _loadCategoriesFromBackend() async {
     final url = Uri.parse("http://127.0.0.1:5000/categories");
@@ -173,9 +173,8 @@ class _InventoryContentDState extends State<InventoryContentD> {
         final List<dynamic> data = jsonDecode(response.body);
 
         setState(() {
-          // Instead of assigning = (which causes error)
-          Dash_categories.clear();       // remove old categories
-          Dash_categories.addAll(        // add new ones from backend
+          Dash_categories.clear();
+          Dash_categories.addAll(
             data.map((cat) {
               final img = cat['image_path'];
               return {
@@ -183,30 +182,31 @@ class _InventoryContentDState extends State<InventoryContentD> {
                 'name': cat['category_name'] as String,
                 'image': img != null
                     ? 'http://127.0.0.1:5000/static/uploads/$img'
-                    : 'assets/App_Icon.png', // fallback image
+                    : 'assets/App_Icon.png',
               };
             }),
           );
         });
-      } 
-      else {
+      } else {
         print("LOAD CATEGORIES FAILED: ${response.body}");
       }
     } catch (e) {
       print("ERROR LOADING CATEGORIES: $e");
     }
   }
-  Future<bool> deleteCategoryFromBackend(int id) async {
-  final url = Uri.parse("http://127.0.0.1:5000/api/categories/$id");
 
-  try {
-    final response = await http.delete(url);
-    return response.statusCode == 200;
-  } catch (e) {
-    print("ERROR DELETE CATEGORY: $e");
-    return false;
+  Future<bool> deleteCategoryFromBackend(int id) async {
+    final url = Uri.parse("http://127.0.0.1:5000/api/categories/$id");
+
+    try {
+      final response = await http.delete(url);
+      return response.statusCode == 200;
+    } catch (e) {
+      print("ERROR DELETE CATEGORY: $e");
+      return false;
+    }
   }
-}
+
   void addCategoryDialog() {
     TextEditingController nameCtrl = TextEditingController();
     _selectedCategoryImage = null; // reset
@@ -229,8 +229,6 @@ class _InventoryContentDState extends State<InventoryContentD> {
                           const InputDecoration(labelText: "Category Name"),
                     ),
                     const SizedBox(height: 12),
-
-                    // image preview
                     if (_selectedCategoryImage != null)
                       SizedBox(
                         height: 80,
@@ -241,9 +239,7 @@ class _InventoryContentDState extends State<InventoryContentD> {
                       )
                     else
                       const Text("No image selected"),
-
                     const SizedBox(height: 8),
-
                     OutlinedButton.icon(
                       onPressed: () => _pickCategoryImage(setInner),
                       icon: const Icon(Icons.image),
@@ -275,7 +271,6 @@ class _InventoryContentDState extends State<InventoryContentD> {
                     );
 
                     if (newId != null) {
-                      // Reload from backend so images + IDs are accurate
                       await _loadCategoriesFromBackend();
 
                       if (mounted) {
@@ -315,30 +310,39 @@ class _InventoryContentDState extends State<InventoryContentD> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text("Edit Category"),
+        title: const Text("Edit Category"),
         content: SizedBox(
           height: 160,
           child: Column(
             children: [
-              TextField(controller: nameCtrl, decoration: InputDecoration(labelText: "Category Name")),
-              TextField(controller: imgCtrl, decoration: InputDecoration(labelText: "Image Path")),
+              TextField(
+                controller: nameCtrl,
+                decoration:
+                    const InputDecoration(labelText: "Category Name"),
+              ),
+              TextField(
+                controller: imgCtrl,
+                decoration:
+                    const InputDecoration(labelText: "Image Path"),
+              ),
             ],
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text("Cancel"),
+            child: const Text("Cancel"),
           ),
           TextButton(
             onPressed: () {
               cat['name'] = nameCtrl.text;
-              cat['image'] = imgCtrl.text.isEmpty ? 'assets/App_Icon.png' : imgCtrl.text;
+              cat['image'] =
+                  imgCtrl.text.isEmpty ? 'assets/App_Icon.png' : imgCtrl.text;
               setState(() {});
               Navigator.pop(ctx);
             },
-            child: Text("Update"),
-          )
+            child: const Text("Update"),
+          ),
         ],
       ),
     );
@@ -347,7 +351,6 @@ class _InventoryContentDState extends State<InventoryContentD> {
   Future<void> deleteCategory(int index) async {
     final int catID = Dash_categories[index]['id'] as int;
 
-    // 1) Call backend first
     final ok = await deleteCategoryFromBackend(catID);
 
     if (!ok) {
@@ -357,10 +360,9 @@ class _InventoryContentDState extends State<InventoryContentD> {
           content: Text("Failed to delete category from server"),
         ),
       );
-      return; // stop, don't remove locally
+      return;
     }
 
-    // 2) If backend delete is OK, remove locally too
     setState(() {
       for (var p in Pro_product) {
         p['categories'].remove(catID);
@@ -369,11 +371,12 @@ class _InventoryContentDState extends State<InventoryContentD> {
     });
   }
 
-// =============================================================
-// PRODUCT CRUD
-// =============================================================
+  // =============================================================
+  // PRODUCT CRUD
+  // =============================================================
 
   void addProductDialog() {
+    TextEditingController expiryCtrl = TextEditingController();
     TextEditingController nameCtrl = TextEditingController();
     TextEditingController priceCtrl = TextEditingController();
     TextEditingController stockCtrl = TextEditingController();
@@ -393,14 +396,11 @@ class _InventoryContentDState extends State<InventoryContentD> {
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      // NAME
                       TextField(
                         controller: nameCtrl,
                         decoration: const InputDecoration(labelText: "Name"),
                       ),
                       const SizedBox(height: 10),
-
-                      // IMAGE PICKER (NEW)
                       GestureDetector(
                         onTap: () => _pickImage(setInner),
                         child: Container(
@@ -424,25 +424,22 @@ class _InventoryContentDState extends State<InventoryContentD> {
                         ),
                       ),
                       const SizedBox(height: 15),
-
-                      // PRICE
                       TextField(
                         controller: priceCtrl,
                         decoration: const InputDecoration(labelText: "Price"),
                         keyboardType: TextInputType.number,
                       ),
                       const SizedBox(height: 15),
-
-                      // STOCK
                       TextField(
                         controller: stockCtrl,
                         decoration: const InputDecoration(labelText: "Stock"),
                         keyboardType: TextInputType.number,
                       ),
                       const SizedBox(height: 20),
-
-                      const Text("Categories:",
-                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      const Text(
+                        "Categories:",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       ...Dash_categories.map((e) {
                         return CheckboxListTile(
                           title: Text(e['name']),
@@ -458,6 +455,28 @@ class _InventoryContentDState extends State<InventoryContentD> {
                           },
                         );
                       }),
+                      const SizedBox(height: 10),
+                      // EXPIRY DATE (with calendar)
+                      TextFormField(
+                        controller: expiryCtrl,
+                        readOnly: true,
+                        decoration: const InputDecoration(
+                          labelText: "Expiry Date (YYYY-MM-DD)",
+                          suffixIcon: Icon(Icons.calendar_month),
+                        ),
+                        onTap: () async {
+                          DateTime? picked = await showDatePicker(
+                            context: context,
+                            initialDate: DateTime.now(),
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime(2100),
+                          );
+                          if (picked != null) {
+                            expiryCtrl.text =
+                                DateFormat("yyyy-MM-dd").format(picked);
+                          }
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -484,8 +503,8 @@ class _InventoryContentDState extends State<InventoryContentD> {
                       return;
                     }
 
-                    // --- SEND TO BACKEND WITH IMAGE ---
-                    var url = Uri.parse("http://127.0.0.1:5000/api/add_product");
+                    var url =
+                        Uri.parse("http://127.0.0.1:5000/api/add_product");
                     var request = http.MultipartRequest('POST', url);
 
                     request.fields['product_name'] = nameCtrl.text;
@@ -494,10 +513,11 @@ class _InventoryContentDState extends State<InventoryContentD> {
                     request.fields['price'] = price.toString();
                     request.fields['stock_quantity'] = stock.toString();
                     request.fields['unit'] = "pcs";
+                    request.fields['expiry_date'] = expiryCtrl.text;
 
                     if (_selectedImage != null) {
                       request.files.add(await http.MultipartFile.fromPath(
-                        'image',                 // must match backend key
+                        'image',
                         _selectedImage!.path,
                       ));
                     }
@@ -505,17 +525,20 @@ class _InventoryContentDState extends State<InventoryContentD> {
                     var response = await request.send();
 
                     if (response.statusCode == 200) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Product added!")),
-                      );
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Product added!")),
+                        );
+                      }
                       await _loadProducts();
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                              "Failed: ${response.statusCode}"),
-                        ),
-                      );
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("Failed: ${response.statusCode}"),
+                          ),
+                        );
+                      }
                     }
 
                     Navigator.pop(ctx);
@@ -530,106 +553,111 @@ class _InventoryContentDState extends State<InventoryContentD> {
     );
   }
 
+  // OLD local-only edit dialog (still here if you use Pro_product)
+  void editProductDialog(int index) {
+    var p = Pro_product[index];
 
+    TextEditingController nameCtrl =
+        TextEditingController(text: p['name']);
+    TextEditingController imageCtrl =
+        TextEditingController(text: p['image']);
+    TextEditingController priceCtrl =
+        TextEditingController(text: p['price'].toString());
+    TextEditingController stockCtrl =
+        TextEditingController(text: p['stock'].toString());
 
-void editProductDialog(int index) {
-  // use the OLD local list, not _products
-  var p = Pro_product[index];
+    List<int> selectedCategories = List.from(p['categories']);
 
-  TextEditingController nameCtrl =
-      TextEditingController(text: p['name']);
-  TextEditingController imageCtrl =
-      TextEditingController(text: p['image']);
-  TextEditingController priceCtrl =
-      TextEditingController(text: p['price'].toString());
-  TextEditingController stockCtrl =
-      TextEditingController(text: p['stock'].toString());
-
-  List<int> selectedCategories = List.from(p['categories']);
-
-  showDialog(
-    context: context,
-    builder: (ctx) =>
-        StatefulBuilder(builder: (ctx, setInner) {
-      return AlertDialog(
-        title: const Text("Edit Product"),
-        content: SizedBox( 
-          width: 400,
-          height: 400,
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                TextField(
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setInner) {
+        return AlertDialog(
+          title: const Text("Edit Product"),
+          content: SizedBox(
+            width: 400,
+            height: 400,
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  TextField(
                     controller: nameCtrl,
-                    decoration: const InputDecoration(
-                        labelText: "Name")),
-                TextField(
+                    decoration:
+                        const InputDecoration(labelText: "Name"),
+                  ),
+                  TextField(
                     controller: imageCtrl,
-                    decoration: const InputDecoration(
-                        labelText: "Image Path")),
-                TextField(
+                    decoration:
+                        const InputDecoration(labelText: "Image Path"),
+                  ),
+                  TextField(
                     controller: priceCtrl,
-                    decoration: const InputDecoration(
-                        labelText: "Price")),
-                TextField(
+                    decoration:
+                        const InputDecoration(labelText: "Price"),
+                  ),
+                  TextField(
                     controller: stockCtrl,
-                    decoration: const InputDecoration(
-                        labelText: "Stock")),
-                const SizedBox(height: 20),
-                const Text("Categories:",
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                ...Dash_categories.map((e) {
-                  return CheckboxListTile(
-                    title: Text(e['name']),
-                    value: selectedCategories.contains(e['id']),
-                    onChanged: (v) {
-                      setInner(() {
-                        if (v == true) {
-                          selectedCategories.add(e['id']);
-                        } else {
-                          selectedCategories.remove(e['id']);
-                        }
-                      });
-                    },
-                  );
-                }).toList(),
-              ],
+                    decoration:
+                        const InputDecoration(labelText: "Stock"),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    "Categories:",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  ...Dash_categories.map((e) {
+                    return CheckboxListTile(
+                      title: Text(e['name']),
+                      value: selectedCategories.contains(e['id']),
+                      onChanged: (v) {
+                        setInner(() {
+                          if (v == true) {
+                            selectedCategories.add(e['id']);
+                          } else {
+                            selectedCategories.remove(e['id']);
+                          }
+                        });
+                      },
+                    );
+                  }).toList(),
+                ],
+              ),
             ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("Cancel"),
-          ),
-          TextButton(
-            onPressed: () {
-              Pro_product.add({
-                'name': nameCtrl.text,
-                'image': imageCtrl.text.isEmpty
-                    ? 'assets/App_Icon.png'
-                    : imageCtrl.text,
-                'categories': selectedCategories,
-                'price': int.tryParse(priceCtrl.text) ?? 0,
-                'stock': int.tryParse(stockCtrl.text) ?? 0,
-                'ID': Pro_product.length,
-              });
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () {
+                Pro_product.add({
+                  'name': nameCtrl.text,
+                  'image': imageCtrl.text.isEmpty
+                      ? 'assets/App_Icon.png'
+                      : imageCtrl.text,
+                  'categories': selectedCategories,
+                  'price': int.tryParse(priceCtrl.text) ?? 0,
+                  'stock': int.tryParse(stockCtrl.text) ?? 0,
+                  'ID': Pro_product.length,
+                });
 
-              setState(() {});
-              Navigator.pop(ctx);
-            },
-            child: const Text("Save"),
-          )
-        ],
-      );
-    }),
-  );
-}
+                setState(() {});
+                Navigator.pop(ctx);
+              },
+              child: const Text("Save"),
+            ),
+          ],
+        );
+      }),
+    );
+  }
 
   void deleteProduct(int index) {
     Pro_product.removeAt(index);
     setState(() {});
   }
+
+  // =================== EDIT PRODUCT (BACKEND) WITH EXPIRY ===================
   void _editProductDialog(Product p) {
     TextEditingController nameCtrl =
         TextEditingController(text: p.productName);
@@ -637,6 +665,13 @@ void editProductDialog(int index) {
         TextEditingController(text: p.price.toString());
     TextEditingController stockCtrl =
         TextEditingController(text: p.stockQuantity.toString());
+
+    // 👇 NEW: expiry date controller, pre-filled if existing
+    TextEditingController expiryCtrl = TextEditingController(
+      text: p.expiryDate != null
+          ? DateFormat('yyyy-MM-dd').format(p.expiryDate!)
+          : "",
+    );
 
     showDialog(
       context: context,
@@ -659,6 +694,29 @@ void editProductDialog(int index) {
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(labelText: "Stock"),
             ),
+            const SizedBox(height: 10),
+            // 👇 NEW: editable expiry date with date picker
+            TextFormField(
+              controller: expiryCtrl,
+              readOnly: true,
+              decoration: const InputDecoration(
+                labelText: "Expiry Date (YYYY-MM-DD)",
+                suffixIcon: Icon(Icons.calendar_month),
+              ),
+              onTap: () async {
+                DateTime initial = p.expiryDate ?? DateTime.now();
+                DateTime? picked = await showDatePicker(
+                  context: context,
+                  initialDate: initial,
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime(2100),
+                );
+                if (picked != null) {
+                  expiryCtrl.text =
+                      DateFormat("yyyy-MM-dd").format(picked);
+                }
+              },
+            ),
           ],
         ),
         actions: [
@@ -673,17 +731,23 @@ void editProductDialog(int index) {
                 nameCtrl.text,
                 double.tryParse(priceCtrl.text) ?? p.price,
                 int.tryParse(stockCtrl.text) ?? p.stockQuantity,
+                expiryCtrl.text, // 👈 pass expiry date to backend
               );
 
               if (ok) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Product updated!")),
-                );
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Product updated!")),
+                  );
+                }
                 await _loadProducts(); // refresh products
               } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Failed to update product")),
-                );
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text("Failed to update product")),
+                  );
+                }
               }
 
               Navigator.pop(ctx);
@@ -700,18 +764,22 @@ void editProductDialog(int index) {
     String name,
     double price,
     int stock,
+    String expiryDate,
   ) async {
     var url = Uri.parse("http://127.0.0.1:5000/api/update_product/$id");
 
     try {
+      final body = {
+        "product_name": name,
+        "price": price,
+        "stock_quantity": stock,
+        "expiry_date": expiryDate, // can be "" if user cleared it
+      };
+
       var response = await http.put(
         url,
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "product_name": name,
-          "price": price,
-          "stock_quantity": stock,
-        }),
+        body: jsonEncode(body),
       );
 
       return response.statusCode == 200;
@@ -744,55 +812,43 @@ void editProductDialog(int index) {
     }
   }
 
-  
-// ==================================================================
-// BUILD UI
-// ==================================================================
+  // ==================================================================
+  // BUILD UI
+  // ==================================================================
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(50),
+      padding: const EdgeInsets.all(50),
       child: Column(
         children: [
-
-          // =============================================================
-          // ADD BUTTONS
-          // =============================================================
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              // Add Product
               OutlinedButton.icon(
                 onPressed: addProductDialog,
                 style: OutlinedButton.styleFrom(
-                  backgroundColor: Color.fromRGBO(0, 123, 19, 1),
+                  backgroundColor: const Color.fromRGBO(0, 123, 19, 1),
                 ),
-                icon: Icon(Icons.add, color: Colors.white),
-                label: Text("Add Product", style: TextStyle(color: Colors.white)),
+                icon: const Icon(Icons.add, color: Colors.white),
+                label: const Text("Add Product",
+                    style: TextStyle(color: Colors.white)),
               ),
-
-              SizedBox(width: 20),
-
-              // Add Category
+              const SizedBox(width: 20),
               OutlinedButton.icon(
                 onPressed: addCategoryDialog,
                 style: OutlinedButton.styleFrom(
                   backgroundColor: Colors.blue,
                 ),
-                icon: Icon(Icons.category, color: Colors.white),
-                label: Text("Add Category", style: TextStyle(color: Colors.white)),
+                icon: const Icon(Icons.category, color: Colors.white),
+                label: const Text("Add Category",
+                    style: TextStyle(color: Colors.white)),
               ),
             ],
           ),
-
           const SizedBox(height: 20),
-
-          // =============================================================
-          // TABLE HEADER
-          // =============================================================
           Container(
-            margin: EdgeInsets.only(top: 10, bottom: 20),
+            margin: const EdgeInsets.only(top: 10, bottom: 20),
             height: 70,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(15),
@@ -832,15 +888,12 @@ void editProductDialog(int index) {
               ],
             ),
           ),
-
-          // =============================================================
-          // DATA TABLE
-          // =============================================================
           Container(
             height: 700,
             width: 1700,
             child: DataTable2(
-              headingRowColor: WidgetStateColor.resolveWith((_) => Colors.white),
+              headingRowColor:
+                  WidgetStateColor.resolveWith((_) => Colors.white),
               headingRowHeight: 60,
               dataRowHeight: 110,
               minWidth: 1600,
@@ -850,7 +903,7 @@ void editProductDialog(int index) {
                 DataColumn2(label: Text("Product")),
                 DataColumn2(label: Text("Price")),
                 DataColumn2(label: Text("Stock")),
-                DataColumn2(label: Text("Date")),
+                DataColumn2(label: Text("Expiry")),
                 DataColumn2(label: Text("")),
               ],
               rows: List.generate(_products.length, (index) {
@@ -859,7 +912,7 @@ void editProductDialog(int index) {
                 return DataRow(
                   cells: [
                     DataCell(Text(p.productId.toString())),
-                    DataCell(Text(p.categoryName ?? '')),  // moved here
+                    DataCell(Text(p.categoryName ?? '')),
                     DataCell(
                       Row(
                         children: [
@@ -871,8 +924,9 @@ void editProductDialog(int index) {
                                 width: 50,
                                 height: 50,
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    const Icon(Icons.broken_image),
+                                errorBuilder:
+                                    (context, error, stackTrace) =>
+                                        const Icon(Icons.broken_image),
                               ),
                             )
                           else
@@ -883,20 +937,65 @@ void editProductDialog(int index) {
                           Expanded(
                             child: Text(
                               p.productName,
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
                       ),
                     ),
-
                     DataCell(Text(p.price.toString())),
                     DataCell(Text(p.stockQuantity.toString())),
-                    DataCell(Text(
-                      DateFormat("yyyy-MM-dd").format(DateTime.now()),
-                      ),
-                    ),
+                    DataCell(() {
+                      if (p.expiryDate == null) {
+                        return const Text(
+                          "--",
+                          style: TextStyle(color: Colors.grey),
+                        );
+                      }
+
+                      final now = DateTime.now();
+                      final expiry = DateTime(
+                        p.expiryDate!.year,
+                        p.expiryDate!.month,
+                        p.expiryDate!.day,
+                      );
+
+                      final daysDiff = expiry
+                          .difference(DateTime(now.year, now.month, now.day))
+                          .inDays;
+
+                      Color color;
+                      FontWeight weight = FontWeight.normal;
+                      String label = DateFormat("yyyy-MM-dd").format(expiry);
+
+                      if (daysDiff < 0) {
+                        // Already past expiry date
+                        color = Colors.red;
+                        weight = FontWeight.bold;
+                        label += " (Expired)";
+                      } else if (daysDiff == 0) {
+                        // Today is the expiry date
+                        color = Colors.orange;
+                        weight = FontWeight.bold;
+                        label += " (Expiring Today)";
+                      } else if (daysDiff <= 30) {
+                        // Within the next 30 days
+                        color = Colors.orange;
+                        weight = FontWeight.bold;
+                        label += " (Soon)";
+                      } else {
+                        // Still far from expiry
+                        color = Colors.green;
+                      }
+
+                      return Text(
+                        label,
+                        style: TextStyle(color: color, fontWeight: weight),
+                      );
+                    }()),
+
                     DataCell(
                       Row(
                         children: [
@@ -909,11 +1008,11 @@ void editProductDialog(int index) {
                           const SizedBox(width: 5),
                           ElevatedButton(
                             onPressed: () async {
-                              // optional confirm dialog
                               final confirm = await showDialog<bool>(
                                 context: context,
                                 builder: (ctx) => AlertDialog(
-                                  title: const Text("Delete Product"),
+                                  title:
+                                      const Text("Delete Product"),
                                   content: Text(
                                     "Are you sure you want to delete '${p.productName}'?",
                                   ),
@@ -928,7 +1027,8 @@ void editProductDialog(int index) {
                                           Navigator.pop(ctx, true),
                                       child: const Text(
                                         "Delete",
-                                        style: TextStyle(color: Colors.red),
+                                        style:
+                                            TextStyle(color: Colors.red),
                                       ),
                                     ),
                                   ],
@@ -952,20 +1052,15 @@ void editProductDialog(int index) {
                     ),
                   ],
                 );
-              },
-              ),
+              }),
             ),
           ),
-
           const SizedBox(height: 40),
-
-          // =============================================================
-          // CATEGORY MANAGER
-          // =============================================================
-          Text("Manage Categories", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
-
-          SizedBox(height: 10),
-
+          const Text(
+            "Manage Categories",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+          ),
+          const SizedBox(height: 10),
           Wrap(
             spacing: 20,
             children: List.generate(Dash_categories.length, (i) {
@@ -979,7 +1074,8 @@ void editProductDialog(int index) {
                   img,
                   height: 60,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Icon(Icons.broken_image, size: 60),
+                  errorBuilder: (_, __, ___) =>
+                      const Icon(Icons.broken_image, size: 60),
                 );
               } else {
                 catImage = Image.asset(
@@ -988,7 +1084,7 @@ void editProductDialog(int index) {
                 );
               }
               return Container(
-                padding: EdgeInsets.all(10),
+                padding: const EdgeInsets.all(10),
                 width: 200,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
@@ -998,15 +1094,26 @@ void editProductDialog(int index) {
                 child: Column(
                   children: [
                     catImage,
-                    SizedBox(height: 5),
-                    Text(c['name'], style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 5),
+                    Text(
+                      c['name'],
+                      style:
+                          const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        IconButton(icon: Icon(Icons.edit), onPressed: () => editCategoryDialog(i)),
-                        IconButton(icon: Icon(Icons.delete, color: Colors.red), onPressed: () => deleteCategory(i)),
+                        IconButton(
+                          icon: const Icon(Icons.edit),
+                          onPressed: () => editCategoryDialog(i),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete,
+                              color: Colors.red),
+                          onPressed: () => deleteCategory(i),
+                        ),
                       ],
-                    )
+                    ),
                   ],
                 ),
               );

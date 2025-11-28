@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../List_Manager.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'sales_info_card.dart'; 
 
 class DashboardContent extends StatefulWidget {
   const DashboardContent({super.key});
@@ -173,6 +173,114 @@ class _DashboardContentState extends State<DashboardContent> {
                           ),
                   ],
                 ),
+    );
+  }
+}
+class DashboardInfoBuilder extends StatelessWidget {
+  const DashboardInfoBuilder({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 1000,
+      margin: const EdgeInsets.only(bottom: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: const [
+          // 1️⃣ FIRST CARD – SALES WITH Daily / Weekly / Monthly
+          SalesInfoCard(),
+
+          SizedBox(width: 20),
+
+          // 2️⃣ SECOND CARD – placeholder for now
+          _SimpleInfoCard(
+            icon: Icons.notifications_none,
+            title: 'Info 2',
+            value: '--',
+            description: 'Placeholder',
+          ),
+
+          SizedBox(width: 20),
+
+          // 3️⃣ THIRD CARD – placeholder for now
+          _SimpleInfoCard(
+            icon: Icons.home_outlined,
+            title: 'Info 3',
+            value: '--',
+            description: 'Placeholder',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SimpleInfoCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String value;
+  final String description;
+
+  const _SimpleInfoCard({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.description,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 220,
+      height: 220,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: const Color(0xFF61D77A), // same green as SalesInfoCard
+          width: 6,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Icon(
+              icon,
+              size: 40,
+            ),
+            Column(
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.outfit(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  description,
+                  style: GoogleFonts.outfit(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+            Text(
+              value,
+              style: GoogleFonts.outfit(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
