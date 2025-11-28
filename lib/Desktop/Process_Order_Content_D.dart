@@ -7,9 +7,13 @@ import '../services/product_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-
 class ProcessOrderContentD extends StatefulWidget {
-  const ProcessOrderContentD({super.key});
+  final String username; // 👈 logged-in user (admin or cashier)
+
+  const ProcessOrderContentD({
+    super.key,
+    required this.username,
+  });
 
   @override
   State<ProcessOrderContentD> createState() => _ProcessOrderContentDState();
@@ -56,7 +60,7 @@ class _ProcessOrderContentDState extends State<ProcessOrderContentD> {
       });
     }
   }
-  
+
   Future<void> _loadCategoriesFromBackend() async {
     final url = Uri.parse("http://127.0.0.1:5000/categories");
 
@@ -96,6 +100,15 @@ class _ProcessOrderContentDState extends State<ProcessOrderContentD> {
       return null;
     }
   }
+
+  // helper to format john_doe -> John Doe
+  String _formatName(String username) {
+    return username.replaceAll('_', ' ').split(' ').map((word) {
+      if (word.isEmpty) return '';
+      return '${word[0].toUpperCase()}${word.substring(1)}';
+    }).join(' ');
+  }
+
   Future<bool> _submitTransactionToBackend({
     required double totalAmount,
     required double amountReceived,
@@ -103,16 +116,17 @@ class _ProcessOrderContentDState extends State<ProcessOrderContentD> {
     // Build items list for backend
     final items = currentOrder.map((item) {
       return {
-        'product_id': item['ID'],              // from currentOrder
-        'quantity': item['quantity'],         // int
-        'price': item['price'],               // double
+        'product_id': item['ID'], // from currentOrder
+        'quantity': item['quantity'], // int
+        'price': item['price'], // double
       };
     }).toList();
 
     final body = {
-      'user_id': 1,                // TODO: replace with real logged-in user id
-      'payment_method': 'cash',    // or dynamic later
+      'user_id': 1,
+      'payment_method': 'cash',
       'total_amount': totalAmount,
+      'cashier': widget.username, // who processed the order
       'items': items,
     };
 
@@ -252,7 +266,7 @@ class _ProcessOrderContentDState extends State<ProcessOrderContentD> {
                 // 2) Close dialog
                 if (mounted) Navigator.pop(context);
 
-                // 3) Save to local history (optional)
+                // 3) Save to local history
                 saveToHistory(finalTotal, amountReceived, change);
 
                 // 4) Clear order in UI
@@ -273,14 +287,15 @@ class _ProcessOrderContentDState extends State<ProcessOrderContentD> {
   void saveToHistory(double total, double received, double change) {
     TransHistory.add({
       'id': orderIdCounter++,
-      'cashierName': 'John Doe', // adjust later
+      // 👇 use whoever is logged in, formatted nicely
+      'cashierName': _formatName(widget.username),
       'date': DateTime.now().toString(),
       'total': total.toStringAsFixed(2),
       'items': currentOrder.map((item) {
         return {
           'name': item['name'],
-          'price':
-              ((item['quantity'] as int) * (item['price'] as double)).toStringAsFixed(2),
+          'price': ((item['quantity'] as int) * (item['price'] as double))
+              .toStringAsFixed(2),
           'quantity': item['quantity'],
         };
       }).toList(),
@@ -302,9 +317,7 @@ class _ProcessOrderContentDState extends State<ProcessOrderContentD> {
 
     final List<Product> filteredProducts = selectedCategoryId == 0
         ? _products
-        : _products
-            .where((p) => p.categoryId == selectedCategoryId)
-            .toList();
+        : _products.where((p) => p.categoryId == selectedCategoryId).toList();
 
     if (filteredProducts.isEmpty) {
       return const Center(child: Text("No products for this category"));
@@ -313,24 +326,22 @@ class _ProcessOrderContentDState extends State<ProcessOrderContentD> {
     return GridView.builder(
       padding: const EdgeInsets.all(20),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 4,       // more products per row
-          childAspectRatio: 4 / 5, // smaller product box
-          crossAxisSpacing: 15,    // smaller gaps
-          mainAxisSpacing: 15,
+        crossAxisCount: 4, // more products per row
+        childAspectRatio: 4 / 5, // smaller product box
+        crossAxisSpacing: 15, // smaller gaps
+        mainAxisSpacing: 15,
       ),
       itemCount: filteredProducts.length,
       itemBuilder: (context, index) {
         final p = filteredProducts[index];
 
         return Card(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           elevation: 3,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const SizedBox(height: 8),
-              // Image placeholder (you can later connect real images)
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -344,14 +355,13 @@ class _ProcessOrderContentDState extends State<ProcessOrderContentD> {
                       : const Icon(Icons.image_not_supported, size: 40),
                 ),
               ),
-
               const SizedBox(height: 4),
               Text(
                 p.productName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                    fontWeight: FontWeight.w600, fontSize: 16),
+                style:
+                    const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
               ),
               Text("Stock: ${p.stockQuantity}"),
               Text("₱${p.price.toStringAsFixed(2)}"),
@@ -428,8 +438,7 @@ class _ProcessOrderContentDState extends State<ProcessOrderContentD> {
 
               // Categories row (still using global Dash_categories)
               Container(
-                margin:
-                    const EdgeInsets.only(left: 50, right: 10, top: 20),
+                margin: const EdgeInsets.only(left: 50, right: 10, top: 20),
                 width: 1200,
                 height: 300,
                 decoration: BoxDecoration(
@@ -511,8 +520,7 @@ class _ProcessOrderContentDState extends State<ProcessOrderContentD> {
                                   itemBuilder: (context, index) {
                                     final item = currentOrder[index];
                                     return Container(
-                                      margin:
-                                          const EdgeInsets.only(bottom: 10),
+                                      margin: const EdgeInsets.only(bottom: 10),
                                       padding: const EdgeInsets.all(10),
                                       decoration: BoxDecoration(
                                         color: Colors.white,
@@ -565,9 +573,8 @@ class _ProcessOrderContentDState extends State<ProcessOrderContentD> {
                                           // plus
                                           IconButton(
                                             onPressed: () {
-                                              final prod =
-                                                  _findProductById(
-                                                      item['ID'] as int);
+                                              final prod = _findProductById(
+                                                  item['ID'] as int);
                                               if (prod != null &&
                                                   item['quantity'] >=
                                                       prod.stockQuantity) {

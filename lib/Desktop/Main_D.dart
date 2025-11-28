@@ -23,13 +23,16 @@ class _D_Dashboad_PageState extends State<D_Dashboad_Page> {
   bool _isNavigationRailExpanded = false;
   int _selectedIndex = 0;
 
-  final List<Widget> _mainContentPages = [
-    DashboardContent(),
-    ProcessOrderContentD(),
-    InventoryContentD(),
-    HistoryContentD(),
-    const Center(child: Text('Transaction History Page')),
-  ];
+  // 👇 CHANGED: make this a getter so we can use widget.username
+  List<Widget> get _mainContentPages => [
+        DashboardContent(),
+        ProcessOrderContentD(
+          username: widget.username, // whoever is logged in (admin/cashier)
+        ),
+        InventoryContentD(),
+        HistoryContentD(),
+        const Center(child: Text('Transaction History Page')),
+      ];
 
   double get _appIconSize => _isNavigationRailExpanded ? 100 : 50;
   double get _leadingSizedBoxHeight => _isNavigationRailExpanded ? 0 : 90;

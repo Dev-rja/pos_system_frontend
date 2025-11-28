@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../List_Manager.dart';            // 👈 for TransHistory + TransHistoryBuilder
+import '../List_Manager.dart';            // for TransHistory + TransHistoryBuilder
 import '../services/transaction_service.dart';
 
 class HistoryContentD extends StatefulWidget {
@@ -34,21 +34,20 @@ class _HistoryContentDState extends State<HistoryContentD> {
         final items = (t['items'] ?? []) as List<dynamic>;
 
         TransHistory.add({
-          'id': t['transaction_id'],                 // old: orderIdCounter++
-          'cashierName': 'John Doe',                 // later: real cashier from user_id
-          'date': t['date_time'],                    // builder can format string
-          'total': (t['total_amount'] as num)
-              .toStringAsFixed(2),                  // string total
+          'id': t['transaction_id'],
+          // 👇 if cashier is null (old data), fallback to 'john_doe' → John Doe
+          'cashierName': _formatUsername(t['cashier'] ?? 'john_doe'),
+          'date': t['date_time'],
+          'total': (t['total_amount'] as num).toStringAsFixed(2),
           'items': items.map((item) {
-            final name =
-                item['product_name'] ?? 'Product ${item['product_id']}';
+            final name = item['product_name'] ?? 'Product ${item['product_id']}';
             final qty = item['quantity'] ?? 0;
             final lineTotal =
                 (item['subtotal'] as num).toStringAsFixed(2);
 
             return {
               'name': name,
-              'price': lineTotal,                   // matches old TransHistory
+              'price': lineTotal,
               'quantity': qty,
             };
           }).toList(),
@@ -65,6 +64,13 @@ class _HistoryContentDState extends State<HistoryContentD> {
         _error = e.toString();
       });
     }
+  }
+
+  String _formatUsername(String username) {
+    return username.replaceAll('_', ' ').split(' ').map((word) {
+      if (word.isEmpty) return '';
+      return '${word[0].toUpperCase()}${word.substring(1)}';
+    }).join(' ');
   }
 
   @override
