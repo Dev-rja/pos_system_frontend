@@ -39,6 +39,7 @@ class _ProcessOrderContentDState extends State<ProcessOrderContentD> {
   void initState() {
     super.initState();
     _loadProducts();
+    _loadCategoriesFromBackend();
   }
 
   Future<void> _loadProducts() async {
@@ -53,6 +54,38 @@ class _ProcessOrderContentDState extends State<ProcessOrderContentD> {
         _error = e.toString();
         _isLoading = false;
       });
+    }
+  }
+  
+  Future<void> _loadCategoriesFromBackend() async {
+    final url = Uri.parse("http://127.0.0.1:5000/categories");
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+
+        setState(() {
+          Dash_categories.clear();
+          Dash_categories.addAll(
+            data.map((cat) {
+              final img = cat['image_path'];
+              return {
+                'id': cat['category_id'] as int,
+                'name': cat['category_name'] as String,
+                'image': img != null
+                    ? 'http://127.0.0.1:5000/static/uploads/$img'
+                    : 'assets/App_Icon.png',
+              };
+            }),
+          );
+        });
+      } else {
+        print("LOAD CATEGORIES FAILED: ${response.body}");
+      }
+    } catch (e) {
+      print("ERROR LOADING CATEGORIES (ProcessOrder): $e");
     }
   }
 

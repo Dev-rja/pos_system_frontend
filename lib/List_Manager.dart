@@ -83,11 +83,7 @@ class InfoBoxStyle extends StatelessWidget {
 //==============================================================================
 // Categories List
 //==============================================================================
-final List<Map<String, dynamic>> Dash_categories = [
-  {'id': 1, 'name': 'Vegetables', 'image': 'assets/veg_cat.png'},
-  {'id': 2, 'name': 'Fruits', 'image': 'assets/fru_cat.png'},
-  {'id': 3, 'name': 'Dairy', 'image': 'assets/App_Icon.png'},
-];
+List<Map<String, dynamic>> Dash_categories = [];
 
 //==============================================================================
 // Categories Builder
@@ -124,10 +120,20 @@ class CategoriesBoxStyle extends StatelessWidget {
   final String imagePath;
   final int id;
 
-  CategoriesBoxStyle({required this.name, required this.imagePath, required this.id});
+  CategoriesBoxStyle({
+    super.key,
+    required this.name,
+    required this.imagePath,
+    required this.id,
+  });
 
   @override
   Widget build(BuildContext context) {
+    // Decide whether to use network or asset
+    final ImageProvider imageProvider = imagePath.startsWith('http')
+        ? NetworkImage(imagePath)
+        : AssetImage(imagePath) as ImageProvider;
+
     return Card(
       margin: const EdgeInsets.all(12),
       child: Container(
@@ -135,41 +141,44 @@ class CategoriesBoxStyle extends StatelessWidget {
         padding: const EdgeInsets.all(5),
         child: Stack(
           children: [
-            Flexible(
-              flex: 1,
-              child: Positioned.fill(
-                child: Image.asset(
-                  imagePath,
+            Positioned.fill(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(5),
+                child: Image(
+                  image: imageProvider,
                   fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) =>
+                      const Icon(Icons.broken_image, size: 40),
                 ),
               ),
             ),
-
             Positioned(
               bottom: 0,
+              left: 0,
+              right: 0,
               child: Container(
                 decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey,
-                    spreadRadius: 2,
-                    blurRadius: 5,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-                borderRadius: BorderRadius.circular(5),
-              ),
-                child: SizedBox(
-                  child: AutoSizeText(
-                    name,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.grey,
+                      spreadRadius: 2,
+                      blurRadius: 5,
+                      offset: Offset(0, 3),
                     ),
-                    textAlign: TextAlign.right,
-
+                  ],
+                  borderRadius: BorderRadius.circular(5),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                child: AutoSizeText(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
                   ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ),
@@ -179,6 +188,7 @@ class CategoriesBoxStyle extends StatelessWidget {
     );
   }
 }
+
 
 //==============================================================================
 // Top Items List
@@ -557,6 +567,11 @@ class ProCategoriesBoxStyle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Decide image provider: network or asset
+    final ImageProvider imageProvider = imagePath.startsWith('http')
+        ? NetworkImage(imagePath)
+        : AssetImage(imagePath) as ImageProvider;
+
     return Card(
       color: isSelected ? Colors.greenAccent.withOpacity(.3) : Colors.white,
       child: GestureDetector(
@@ -571,26 +586,34 @@ class ProCategoriesBoxStyle extends StatelessWidget {
           ),
           child: Stack(
             children: [
+              // background image
               Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   image: DecorationImage(
-                    image: AssetImage(imagePath),
+                    image: imageProvider,
                     fit: BoxFit.cover,
+                    onError: (_, __) {},
                   ),
                 ),
               ),
+              // name label
               Positioned(
                 bottom: 0,
                 left: 0,
                 right: 0,
                 child: Container(
                   color: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                   child: AutoSizeText(
                     name,
                     textAlign: TextAlign.center,
                     maxLines: 1,
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
                   ),
                 ),
               ),
@@ -601,7 +624,6 @@ class ProCategoriesBoxStyle extends StatelessWidget {
     );
   }
 }
-
 //==============================================================================
 // History List
 // =============================================================================

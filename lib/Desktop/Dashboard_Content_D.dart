@@ -127,6 +127,7 @@ class _DashboardContentState extends State<DashboardContent> {
                                       horizontal: 8.0),
                                   child: CategoryCard(
                                     name: cat['category_name'] ?? 'Unknown',
+                                    imagePath: cat['image_path'],
                                   ),
                                 );
                               },
@@ -179,11 +180,19 @@ class _DashboardContentState extends State<DashboardContent> {
 // Simple category card – adjust design if you want to match your UI more
 class CategoryCard extends StatelessWidget {
   final String name;
+  final String? imagePath;   // 👈 NEW
 
-  const CategoryCard({super.key, required this.name});
+  const CategoryCard({
+    super.key,
+    required this.name,
+    this.imagePath,
+  });
 
   @override
   Widget build(BuildContext context) {
+    // backend sends only filename (e.g. "snacks.png")
+    final hasImage = imagePath != null && imagePath!.isNotEmpty;
+
     return Container(
       width: 150,
       decoration: BoxDecoration(
@@ -198,19 +207,39 @@ class CategoryCard extends StatelessWidget {
         ],
       ),
       padding: const EdgeInsets.all(12),
-      child: Center(
-        child: Text(
-          name,
-          textAlign: TextAlign.center,
-          style: GoogleFonts.outfit(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (hasImage)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                'http://127.0.0.1:5000/static/uploads/$imagePath',
+                height: 60,
+                width: 60,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) =>
+                    const Icon(Icons.broken_image, size: 40),
+              ),
+            )
+          else
+            const Icon(Icons.category, size: 40),
+
+          const SizedBox(height: 8),
+          Text(
+            name,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.outfit(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 }
+
 
 class TopItemCard extends StatelessWidget {
   final int rank;

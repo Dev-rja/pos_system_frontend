@@ -54,6 +54,8 @@ class _InventoryContentDState extends State<InventoryContentD> {
   File? _selectedImage;
   final ImagePicker _picker = ImagePicker();
 
+  File? _selectedCategoryImage;
+
 
   @override
   void initState() {
@@ -109,25 +111,50 @@ class _InventoryContentDState extends State<InventoryContentD> {
     }
   }
 
+  Future<void> _pickCategoryImage(StateSetter setInner) async {
+    final XFile? picked = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
+
+    if (picked != null) {
+      setInner(() {
+        _selectedCategoryImage = File(picked.path);
+      });
+    }
+  }
+
 // =============================================================
 // CATEGORY CRUD
 // =============================================================
   // ---- CALL API TO ADD CATEGORY ----
-  Future<int?> addCategoryToBackend(String name) async {
+  Future<int?> addCategoryToBackend(
+    String name, {
+    File? imageFile,
+  }) async {
     final url = Uri.parse("http://127.0.0.1:5000/api/add_category");
 
     try {
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"name": name}),  // MUST MATCH BACKEND
-      );
+      final request = http.MultipartRequest('POST', url);
+      request.fields['name'] = name;
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['category_id']; // return new category ID
+      if (imageFile != null) {
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'image',       // must match backend key
+            imageFile.path,
+          ),
+        );
+      }
+
+      final streamedResponse = await request.send();
+      final responseBody = await streamedResponse.stream.bytesToString();
+
+      if (streamedResponse.statusCode == 200) {
+        final data = jsonDecode(responseBody);
+        return data['category_id'] as int;
       } else {
-        print("ADD CATEGORY FAILED: ${response.body}");
+        print("ADD CATEGORY FAILED: $responseBody");
         return null;
       }
     } catch (e) {
@@ -150,10 +177,13 @@ class _InventoryContentDState extends State<InventoryContentD> {
           Dash_categories.clear();       // remove old categories
           Dash_categories.addAll(        // add new ones from backend
             data.map((cat) {
+              final img = cat['image_path'];
               return {
                 'id': cat['category_id'] as int,
                 'name': cat['category_name'] as String,
-                'image': 'assets/App_Icon.png', // default image
+                'image': img != null
+                    ? 'http://127.0.0.1:5000/static/uploads/$img'
+                    : 'assets/App_Icon.png', // fallback image
               };
             }),
           );
@@ -177,67 +207,104 @@ class _InventoryContentDState extends State<InventoryContentD> {
     return false;
   }
 }
-
   void addCategoryDialog() {
     TextEditingController nameCtrl = TextEditingController();
-    TextEditingController imgCtrl  = TextEditingController();
+    _selectedCategoryImage = null; // reset
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("Add Category"),
-        content: SizedBox(
-          height: 160,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameCtrl,
-                decoration: const InputDecoration(labelText: "Category Name"),
-              ),
-              TextField(
-                controller: imgCtrl,
-                decoration: const InputDecoration(labelText: "Image Path"),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("Cancel"),
-          ),
-          TextButton(
-            onPressed: () async {
-              final newId = await addCategoryToBackend(nameCtrl.text);
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setInner) {
+            return AlertDialog(
+              title: const Text("Add Category"),
+              content: SizedBox(
+                height: 230,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: nameCtrl,
+                      decoration:
+                          const InputDecoration(labelText: "Category Name"),
+                    ),
+                    const SizedBox(height: 12),
 
-              if (newId != null) {
-                Dash_categories.add({
-                  'id': newId,                          // real ID from backend
-                  'name': nameCtrl.text,
-                  'image': imgCtrl.text.isEmpty
-                      ? 'assets/App_Icon.png'           // fallback image
-                      : imgCtrl.text,                   // custom image path
-                });
+                    // image preview
+                    if (_selectedCategoryImage != null)
+                      SizedBox(
+                        height: 80,
+                        child: Image.file(
+                          _selectedCategoryImage!,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    else
+                      const Text("No image selected"),
 
-                setState(() {});
-                Navigator.pop(ctx);
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Failed to add category"),
-                  ),
-                );
-              }
-            },
-            child: const Text("Save"),
-          ),
-        ],
-      ),
+                    const SizedBox(height: 8),
+
+                    OutlinedButton.icon(
+                      onPressed: () => _pickCategoryImage(setInner),
+                      icon: const Icon(Icons.image),
+                      label: const Text("Pick Image"),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text("Cancel"),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    final name = nameCtrl.text.trim();
+                    if (name.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Please enter category name"),
+                        ),
+                      );
+                      return;
+                    }
+
+                    final newId = await addCategoryToBackend(
+                      name,
+                      imageFile: _selectedCategoryImage,
+                    );
+
+                    if (newId != null) {
+                      // Reload from backend so images + IDs are accurate
+                      await _loadCategoriesFromBackend();
+
+                      if (mounted) {
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Category added"),
+                          ),
+                        );
+                      }
+                    } else {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Failed to add category"),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  child: const Text("Save"),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
-
-
 
   void editCategoryDialog(int index) {
     Map<String, dynamic> cat = Dash_categories[index];
@@ -904,6 +971,22 @@ void editProductDialog(int index) {
             children: List.generate(Dash_categories.length, (i) {
               var c = Dash_categories[i];
 
+              final img = c['image'] as String?;
+              Widget catImage;
+
+              if (img != null && img.startsWith('http')) {
+                catImage = Image.network(
+                  img,
+                  height: 60,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Icon(Icons.broken_image, size: 60),
+                );
+              } else {
+                catImage = Image.asset(
+                  img ?? 'assets/App_Icon.png',
+                  height: 60,
+                );
+              }
               return Container(
                 padding: EdgeInsets.all(10),
                 width: 200,
@@ -914,7 +997,7 @@ void editProductDialog(int index) {
                 ),
                 child: Column(
                   children: [
-                    Image.asset(c['image'], height: 60),
+                    catImage,
                     SizedBox(height: 5),
                     Text(c['name'], style: TextStyle(fontWeight: FontWeight.bold)),
                     Row(
@@ -929,7 +1012,6 @@ void editProductDialog(int index) {
               );
             }),
           ),
-
         ],
       ),
     );
