@@ -1,84 +1,181 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:google_fonts/google_fonts.dart';
 
 class SalesInfoCard extends StatefulWidget {
-  const SalesInfoCard({super.key});
+  final String title;
+  final String type; // "daily", "weekly", "monthly", "transactions_today"
+
+  const SalesInfoCard({
+    super.key,
+    required this.title,
+    required this.type,
+  });
 
   @override
   State<SalesInfoCard> createState() => _SalesInfoCardState();
 }
 
 class _SalesInfoCardState extends State<SalesInfoCard> {
-  String _selectedPeriod = 'Daily';
+  bool _isLoading = true;
+  String? _error;
+  num? _value;
 
-  // TEMPORARY HARDCODED DATA – later we will get this from backend
-  final Map<String, double> _salesData = {
-    'Daily': 2350.0,
-    'Weekly': 15230.0,
-    'Monthly': 60210.0,
-  };
+  final String _baseUrl = "http://127.0.0.1:5000";
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchValue();
+  }
+
+  Future<void> _fetchValue() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      late Uri url;
+
+      if (widget.type == "daily" || widget.type == "transactions_today") {
+        url = Uri.parse("$_baseUrl/reports/daily");
+      } else if (widget.type == "weekly") {
+        url = Uri.parse("$_baseUrl/reports/weekly");
+      } else if (widget.type == "monthly") {
+        url = Uri.parse("$_baseUrl/reports/monthly");
+      } else {
+        throw Exception("Unknown card type: ${widget.type}");
+      }
+
+      final response = await http.get(url);
+      if (response.statusCode != 200) throw Exception("Error HTTP ${response.statusCode}");
+
+      final data = jsonDecode(response.body);
+      num value = widget.type == "transactions_today"
+          ? data["transactions"] ?? 0
+          : (data["total_sales"] ?? 0) as num;
+
+      setState(() {
+        _value = value;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  // 🎨 Dynamic Color per card type
+  Color _getTopColor() {
+    switch (widget.type) {
+      case "daily":
+        return const Color(0xFF05B748); // green
+      case "weekly":
+        return const Color(0xFF1E88E5); // blue
+      case "monthly":
+        return const Color(0xFF8E24AA); // purple
+      case "transactions_today":
+        return const Color(0xFFFB8C00); // orange
+      default:
+        return const Color(0xFF05B748);
+    }
+  }
+
+  IconData _getIcon() {
+    switch (widget.type) {
+      case "daily":
+        return Icons.today;
+      case "weekly":
+        return Icons.calendar_view_week;
+      case "monthly":
+        return Icons.calendar_month;
+      case "transactions_today":
+        return Icons.receipt_long;
+      default:
+        return Icons.bar_chart;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final value = _salesData[_selectedPeriod] ?? 0.0;
+    String valueText;
 
-    return Container(
-      width: 220, // adjust to match your UI card size
-      height: 220,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: const Color(0xFF61D77A), // your green color
-          width: 6,
+    if (_isLoading) {
+      valueText = "Loading...";
+    } else if (_error != null) {
+      valueText = "Error";
+    } else {
+      if (widget.type == "transactions_today") {
+        valueText = "${_value?.toInt() ?? 0}";
+      } else {
+        valueText = "₱${(_value ?? 0).toDouble().toStringAsFixed(2)}";
+      }
+    }
+
+    final Color topColor = _getTopColor();
+
+    return SizedBox(
+      width: 200,
+      height: 180,
+      child: Card(
+        elevation: 4,
+        margin: const EdgeInsets.all(8),
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(6),
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // ICON
-            const Icon(
-              Icons.check_circle_outline,
-              size: 40,
-            ),
-
-            // TITLE + DROPDOWN
-            Column(
-              children: [
-                const Text(
-                  'Sales',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-
-                DropdownButton<String>(
-                  value: _selectedPeriod,
-                  underline: const SizedBox(),
-                  items: const [
-                    DropdownMenuItem(value: 'Daily', child: Text('Daily')),
-                    DropdownMenuItem(value: 'Weekly', child: Text('Weekly')),
-                    DropdownMenuItem(value: 'Monthly', child: Text('Monthly')),
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                color: topColor,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Align(
+                      alignment: Alignment.topLeft,
+                      child: Icon(
+                        _getIcon(),
+                        color: Colors.white,
+                        size: 26,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      valueText,
+                      style: GoogleFonts.outfit(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                    if (_error != null)
+                      Text(
+                        "Failed",
+                        style: GoogleFonts.outfit(fontSize: 10, color: Colors.white),
+                      ),
                   ],
-                  onChanged: (value) {
-                    if (value == null) return;
-                    setState(() {
-                      _selectedPeriod = value;
-                    });
-                  },
                 ),
-              ],
+              ),
             ),
-
-            // VALUE TEXT AT THE BOTTOM
-            Text(
-              '₱${value.toStringAsFixed(2)}',
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+            Container(
+              height: 40,
+              color: Colors.white,
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Text(
+                widget.title,
+                style: GoogleFonts.outfit(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: topColor,
+                ),
               ),
             ),
           ],

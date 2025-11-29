@@ -185,36 +185,29 @@ class DashboardInfoBuilder extends StatelessWidget {
       width: 1000,
       margin: const EdgeInsets.only(bottom: 20),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: const [
-          // 1️⃣ FIRST CARD – SALES WITH Daily / Weekly / Monthly
-          SalesInfoCard(),
-
-          SizedBox(width: 20),
-
-          // 2️⃣ SECOND CARD – placeholder for now
-          _SimpleInfoCard(
-            icon: Icons.notifications_none,
-            title: 'Info 2',
-            value: '--',
-            description: 'Placeholder',
+          SalesInfoCard(
+            title: "Total Sales Today",
+            type: "daily",
           ),
-
-          SizedBox(width: 20),
-
-          // 3️⃣ THIRD CARD – placeholder for now
-          _SimpleInfoCard(
-            icon: Icons.home_outlined,
-            title: 'Info 3',
-            value: '--',
-            description: 'Placeholder',
+          SalesInfoCard(
+            title: "Total Sales This Week",
+            type: "weekly",
+          ),
+          SalesInfoCard(
+            title: "Total Sales This Month",
+            type: "monthly",
+          ),
+          SalesInfoCard(
+            title: "Transactions Today",
+            type: "transactions_today",
           ),
         ],
       ),
     );
   }
 }
-
 class _SimpleInfoCard extends StatelessWidget {
   final IconData icon;
   final String title;
