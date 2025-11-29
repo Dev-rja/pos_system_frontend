@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'sales_info_card.dart'; 
+// import 'sales_info_card.dart';  // 👈 no longer needed
+import 'sales_range_card.dart';
 
 class DashboardContent extends StatefulWidget {
   const DashboardContent({super.key});
@@ -87,15 +88,15 @@ class _DashboardContentState extends State<DashboardContent> {
                       ),
                     ),
 
-                    // EXISTING SUMMARY CARDS
-                    DashboardInfoBuilder(),
+                    // 🔥 ONLY SALES RANGE CARD (big green card with picker)
+                    const DashboardInfoBuilder(),
 
                     // CATEGORIES TITLE
                     Container(
                       alignment: Alignment.centerLeft,
                       width: 1000,
                       margin:
-                          EdgeInsets.only(bottom: 10, top: 10, left: 10),
+                          const EdgeInsets.only(bottom: 10, top: 10, left: 10),
                       child: Text(
                         'Categories',
                         style: GoogleFonts.outfit(
@@ -176,6 +177,7 @@ class _DashboardContentState extends State<DashboardContent> {
     );
   }
 }
+
 class DashboardInfoBuilder extends StatelessWidget {
   const DashboardInfoBuilder({super.key});
 
@@ -186,89 +188,137 @@ class DashboardInfoBuilder extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 20),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: const [
-          SalesInfoCard(
-            title: "Total Sales Today",
-            type: "daily",
+        children: [
+          // 1️⃣ Stock Level
+          Expanded(
+            child: _SummaryStatCard(
+              color: const Color(0xFFD9534F),
+              icon: Icons.notifications_none,
+              valueText: '2',
+              subtitle: 'Low Stock!',
+              label: 'Stock Level',
+            ),
           ),
-          SalesInfoCard(
-            title: "Total Sales This Week",
-            type: "weekly",
-          ),
-          SalesInfoCard(
-            title: "Total Sales This Month",
-            type: "monthly",
-          ),
-          SalesInfoCard(
-            title: "Transactions Today",
-            type: "transactions_today",
+
+          const SizedBox(width: 12),
+
+          // 2️⃣ Sales with Date Range  (same size because of Expanded)
+          const Expanded(
+              child: SalesRangeCard(),
+            ),
+
+          const SizedBox(width: 12),
+
+          // 3️⃣ Products
+          Expanded(
+            child: _SummaryStatCard(
+              color: const Color(0xFF1ABC9C),
+              icon: Icons.inventory_2_outlined,
+              valueText: '4',
+              subtitle: '',
+              label: 'Expiring Products',
+            ),
           ),
         ],
       ),
     );
   }
 }
-class _SimpleInfoCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String value;
-  final String description;
 
-  const _SimpleInfoCard({
+class _SummaryStatCard extends StatelessWidget {
+  final Color color;
+  final IconData icon;
+  final String valueText;
+  final String subtitle; // middle text (e.g. "Low Stock!")
+  final String label;    // bottom white area label
+
+  const _SummaryStatCard({
     super.key,
+    required this.color,
     required this.icon,
-    required this.title,
-    required this.value,
-    required this.description,
+    required this.valueText,
+    required this.subtitle,
+    required this.label,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 220,
-      height: 220,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: const Color(0xFF61D77A), // same green as SalesInfoCard
-          width: 6,
+    return SizedBox(
+      width: 200,   // 👈 adjust card width here
+      height: 210,  // 👈 adjust card height here
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(6),
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+        clipBehavior: Clip.antiAlias,
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Icon(
-              icon,
-              size: 40,
-            ),
-            Column(
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.outfit(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+            // colored top area
+            Expanded(
+              flex: 3,
+              child: Container(
+                width: double.infinity,
+                color: color,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      icon,
+                      color: Colors.white,
+                      size: 26,
+                    ),
+                    Center(
+                      child: Text(
+                        valueText,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 22,
+                        ),
+                      ),
+                    ),
+                    if (subtitle.isNotEmpty)
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            subtitle,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  description,
-                  style: GoogleFonts.outfit(
+              ),
+            ),
+
+            // white bottom strip
+            Expanded(
+              flex: 1,
+              child: Container(
+                color: Colors.white,
+                alignment: Alignment.centerLeft,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    color: Color(0xFF0E8A32),
+                    fontWeight: FontWeight.w700,
                     fontSize: 14,
-                    fontWeight: FontWeight.w400,
                   ),
-                  textAlign: TextAlign.center,
                 ),
-              ],
-            ),
-            Text(
-              value,
-              style: GoogleFonts.outfit(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
               ),
             ),
           ],
@@ -281,7 +331,7 @@ class _SimpleInfoCard extends StatelessWidget {
 // Simple category card – adjust design if you want to match your UI more
 class CategoryCard extends StatelessWidget {
   final String name;
-  final String? imagePath;   // 👈 NEW
+  final String? imagePath;
 
   const CategoryCard({
     super.key,
@@ -291,7 +341,6 @@ class CategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // backend sends only filename (e.g. "snacks.png")
     final hasImage = imagePath != null && imagePath!.isNotEmpty;
 
     return Container(
@@ -325,7 +374,6 @@ class CategoryCard extends StatelessWidget {
             )
           else
             const Icon(Icons.category, size: 40),
-
           const SizedBox(height: 8),
           Text(
             name,
@@ -341,17 +389,16 @@ class CategoryCard extends StatelessWidget {
   }
 }
 
-
 class TopItemCard extends StatelessWidget {
   final int rank;
   final String name;
-  final String? imagePath; // 👈 NEW field
+  final String? imagePath;
 
   const TopItemCard({
     super.key,
     required this.rank,
     required this.name,
-    this.imagePath,        // 👈 initialize the final field
+    this.imagePath,
   });
 
   @override
@@ -360,7 +407,6 @@ class TopItemCard extends StatelessWidget {
       width: 160,
       child: Column(
         children: [
-          // "Top X" badge
           Container(
             padding:
                 const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
@@ -377,8 +423,6 @@ class TopItemCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-
-          // Card with image + name
           Container(
             height: 110,
             decoration: BoxDecoration(
@@ -396,7 +440,6 @@ class TopItemCard extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // 🔥 product image
                 if (imagePath != null)
                   ClipRRect(
                     borderRadius: BorderRadius.circular(10),
@@ -411,10 +454,7 @@ class TopItemCard extends StatelessWidget {
                   )
                 else
                   const Icon(Icons.image_not_supported, size: 32),
-
                 const SizedBox(height: 6),
-
-                // product name
                 Text(
                   name,
                   textAlign: TextAlign.center,
@@ -433,4 +473,3 @@ class TopItemCard extends StatelessWidget {
     );
   }
 }
-
